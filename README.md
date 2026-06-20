@@ -28,7 +28,23 @@ A production-ready, security-audited platform to understand, track, and reduce i
 
 ## Project Overview
 
-The Carbon Footprint Awareness Platform empowers individuals to quantify their environmental impact across four key lifestyle categories - Transport, Energy, Food, and Waste - using verified EPA/DEFRA emission factors. It then provides personalized, actionable recommendations to reduce CO2 output, backed by a real-time AI assistant with multi-model failover resilience.
+In the face of global climate change, individual actions collectively play a significant role in reducing global carbon emissions. However, many people lack a clear understanding of which daily activities contribute the most to their carbon footprint or how to reduce them effectively.
+
+The **Carbon Footprint Awareness Platform** is a production-grade, highly secure, and accessible single-page application designed to bridge this gap. It empowers users to calculate, track, and reduce their daily carbon emissions across four essential lifestyle areas:
+
+1. **Transport**: Calculates emissions from personal vehicles (petrol, diesel, hybrid, electric), flights (short/long haul), public transit (buses, trains), and active travel (walking, cycling).
+2. **Energy**: Tracks household energy consumption, factoring in grid electricity, natural gas, heating oil, and renewable inputs like solar and wind power.
+3. **Food**: Evaluates dietary impact by comparing the emissions of high-impact foods (like beef and dairy) against low-impact alternatives (such as vegetables, grains, and fruits).
+4. **Waste**: Computes the lifecycle emissions of general waste, composted materials, and recycled items.
+
+### Core Capability Pillars
+
+- **Scientific Calculations**: All calculations utilize standardized emission factors sourced directly from official databases (such as the **US Environmental Protection Agency (EPA)** and the **UK Department for Environment, Food & Rural Affairs (DEFRA)**), converting raw usage data into exact kilograms of $CO_2$ equivalent ($kgCO_2e$).
+- **Session-Based Archival & Cloud Sync**: Users can track their history over time. Every session record is stored locally in-memory and securely archived to **Google Cloud Storage (GCS)** for permanent auditability.
+- **Rule-Based Insights Engine**: Based on a user's footprint distribution, the platform automatically determines their highest-impact emission category and serves tailored, prioritized action items to reduce emissions.
+- **Fail-Safe AI Chatbot**: A virtual sustainability consultant is integrated into the dashboard. To guarantee continuous uptime under heavy traffic, rate limits, or API outages, the chatbot employs a sequential fallback chain across five state-of-the-art LLMs (Gemini, Claude, ChatGPT, Perplexity, DeepSeek) before routing queries to an offline, search-optimized Local Knowledge Base.
+- **Security-Hardened Architecture**: Built from the ground up to prevent malicious attacks, integrating Double-Submit Cookie CSRF tokens, strict XSS regex sanitization, SQL injection prevention, request size limits, and a custom token-bucket rate limiter.
+- **Universal Accessibility**: Conforming to **WCAG 2.1 AA** standards, the interface is optimized for screen readers (using dynamic live regions and semantic headings) and supports full keyboard accessibility (navigating panels, tab lists, and dialogs using arrow and tab keys).
 
 ---
 
@@ -82,49 +98,108 @@ This project is architected to meet the highest standards across all evaluation 
 
 ## Technical Architecture
 
+The platform is designed with a modern decoupled architecture. The frontend is a single-page application (SPA) communicating with a stateless, secure FastAPI backend. Below are the architectural maps illustrating the system layout and key transactional flows.
+
+### System Architecture
+
+```mermaid
+graph TD
+    classDef client fill:#1a1c23,stroke:#3b82f6,stroke-width:2px,color:#fff;
+    classDef api fill:#2c3e50,stroke:#475569,stroke-width:2px,color:#fff;
+    classDef service fill:#1b4d3e,stroke:#10b981,stroke-width:2px,color:#fff;
+    classDef external fill:#7c2d12,stroke:#f97316,stroke-width:2px,color:#fff;
+    classDef db fill:#581c87,stroke:#a855f7,stroke-width:2px,color:#fff;
+
+    subgraph Client ["Client (Browser Interface)"]
+        A[Dashboard UI]:::client
+        B[Calculator Panel]:::client
+        C[Tracker Panel]:::client
+        D[Insights & Recommendations]:::client
+        E[AI Chatbot Client]:::client
+        F[GA4 gtag.js Client]:::client
+    end
+
+    subgraph Backend ["FastAPI Backend Application"]
+        subgraph Middleware ["Middleware Pipeline"]
+            G[CORS Middleware]:::api
+            H[Security Headers]:::api
+            I[Size Limiter - 1MB]:::api
+            J[Token Bucket Rate Limiter]:::api
+            K[Double-Submit CSRF Validator]:::api
+        end
+
+        subgraph Routes ["API Endpoints"]
+            L["/api/auth/*"]:::api
+            M["/api/carbon/*"]:::api
+            N["/api/chat"]:::api
+            O["/api/insights"]:::api
+            P["/api/csrf-token"]:::api
+        end
+
+        subgraph Services ["Application Services"]
+            Q[Carbon Calculator]:::service
+            R[Insights Engine]:::service
+            S[Multi-LLM Chat Service]:::service
+            T[GCS Upload Service]:::service
+            U[GA4 Measurement Service]:::service
+        end
+        
+        V[In-Memory Session Store]:::db
+    end
+
+    subgraph Cloud ["External Services & Cloud Platforms"]
+        W[Google OAuth2 Identity]:::external
+        X[Google Cloud Storage]:::external
+        Y[Google Analytics 4]:::external
+        Z[External LLM Providers]:::external
+    end
+
+    A --> |HTTPS + CSRF| G
+    G --> H --> I --> J --> K
+    K --> Routes
+    
+    L --> W
+    M --> Q
+    M --> T
+    M --> V
+    N --> S
+    O --> R
+    
+    S --> Z
+    T --> X
+    U --> Y
+    F -.-> |Client Tracking| Y
 ```
-+--------------------------------------------------------+
-|                    Client (Browser)                    |
-|  +----------+  +----------+  +-------+  +----------+  |
-|  |Calculator|  | Tracker  |  |Insights|  | AI Chat  |  |
-|  +----+-----+  +----+-----+  +---+---+  +----+-----+  |
-|       |              |            |            |        |
-|  +----+--------------+------------+------------+----+  |
-|  |        Analytics Manager (gtag.js / GA4)         |  |
-|  +-----------------------+--------------------------+  |
-+--------------------------|-----------------------------+
-                           | HTTPS + CSRF Token
-+--------------------------|-----------------------------+
-|                    FastAPI Backend                      |
-|  +-----------------------+--------------------------+  |
-|  |             Middleware Stack                      |  |
-|  |  CORS -> Security Headers -> Size Limiter        |  |
-|  |  -> Rate Limiter -> CSRF Validator               |  |
-|  +-----------------------+--------------------------+  |
-|                          |                             |
-|  +-----------------------+--------------------------+  |
-|  |                 API Routes                       |  |
-|  |  /api/auth/*  /api/carbon/*  /api/chat           |  |
-|  |  /api/insights  /api/health  /api/csrf-token     |  |
-|  |  /api/analytics/config                           |  |
-|  +----+--------------+-------------+----------------+  |
-|       |              |             |                   |
-|  +----+----+  +------+------+  +--+--------------+    |
-|  | Carbon  |  |  Insights   |  |  Chat Service   |    |
-|  | Calc.   |  |  Engine     |  |  (5-LLM chain)  |    |
-|  +---------+  +-------------+  +--+--------------+    |
-|                                   |                   |
-|                        +----------+----------+        |
-|                        |  Local Knowledge    |        |
-|                        |  Base (Offline)     |        |
-|                        +---------------------+        |
-|                                                       |
-|  +-------------+  +-------------+  +--------------+  |
-|  | GCS Service |  |  GA4 Event  |  | Google OAuth  |  |
-|  |  (Storage)  |  |  Tracker    |  |  (Auth)       |  |
-|  +-------------+  +-------------+  +--------------+  |
-+-------------------------------------------------------+
+
+### Carbon Tracking Transaction Flow
+
+This sequence diagram depicts how activity entries are validated, calculated, persisted, archived to Google Cloud Storage, and registered in Google Analytics.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant Client as Web Frontend
+    participant Server as FastAPI Backend
+    participant GCS as Google Cloud Storage
+    participant GA4 as Google Analytics 4
+
+    User->>Client: Enters carbon activity data (Transport, Energy, Food, Waste)
+    Client->>Client: Sanitizes input fields (prevents XSS/injection)
+    Client->>Server: POST /api/carbon/track (includes CSRF cookie + X-CSRF-Token header)
+    Note over Server: Pipeline: CORS -> Security Headers -> Size Limit -> Rate Limit -> CSRF
+    Server->>Server: Sanitizes request payload (removes XSS & SQL injection tags)
+    Server->>Server: Computes total CO2 (kg) using EPA/DEFRA emission factors
+    Server->>Server: Updates in-memory session history database
+    par Cloud Storage Archival
+        Server->>GCS: Uploads JSON data blob (history/{session_id}/{rating}_{uuid}.json)
+    and Event Tracking
+        Server->>GA4: Sends event to GA4 Measurement Protocol (server-side)
+    end
+    Server-->>Client: Returns 200 OK + Carbon Summary & Emissions Rating
+    Client->>User: Renders dynamic charts, category breakdown, and recommendation list
 ```
+
 
 | Layer | Technology |
 |---|---|
@@ -395,21 +470,34 @@ Request -> CORS -> Security Headers -> Size Limiter -> Rate Limiter -> CSRF -> R
 
 ## AI Chatbot Fallback Chain
 
-The chatbot uses a sequential failover strategy to maximize uptime:
+To maintain 100% uptime, the chat route uses a robust cascading failover mechanism. If any model is rate-limited, times out, experiences internal errors, or lacks a valid configuration, the service seamlessly cascades to the next available provider.
 
+```mermaid
+graph TD
+    classDef primary fill:#10b981,stroke:#047857,stroke-width:2px,color:#fff;
+    classDef fallback fill:#3b82f6,stroke:#1d4ed8,stroke-width:2px,color:#fff;
+    classDef local fill:#f59e0b,stroke:#b45309,stroke-width:2px,color:#fff;
+    
+    Start[User Chat Query] --> Gemini{1. Gemini API<br/><i>Primary</i>}:::primary
+    
+    Gemini -->|Success| Return[Return Response]
+    Gemini -->|Timeout / Rate Limit / Error| Claude{2. Claude API<br/><i>Fallback 1</i>}:::fallback
+    
+    Claude -->|Success| Return
+    Claude -->|Timeout / Rate Limit / Error| ChatGPT{3. ChatGPT API<br/><i>Fallback 2</i>}:::fallback
+    
+    ChatGPT -->|Success| Return
+    ChatGPT -->|Timeout / Rate Limit / Error| Perplexity{4. Perplexity API<br/><i>Fallback 3</i>}:::fallback
+    
+    Perplexity -->|Success| Return
+    Perplexity -->|Timeout / Rate Limit / Error| DeepSeek{5. DeepSeek API<br/><i>Fallback 4</i>}:::fallback
+    
+    DeepSeek -->|Success| Return
+    DeepSeek -->|Timeout / Rate Limit / Error| LocalKB[6. Local Knowledge Base<br/><i>Offline Fallback</i>]:::local
+    
+    LocalKB --> Return
 ```
-Gemini (Primary)
-    | on error/timeout/rate-limit
-Claude (Fallback 1)
-    | on error/timeout/rate-limit
-ChatGPT (Fallback 2)
-    | on error/timeout/rate-limit
-Perplexity (Fallback 3)
-    | on error/timeout/rate-limit
-DeepSeek (Fallback 4)
-    | on error/timeout/rate-limit
-Local Knowledge Base (Offline - always succeeds)
-```
+
 
 ### Fallback Triggers
 - API key not configured (placeholder detected)
