@@ -134,7 +134,10 @@ def test_api_chat_route_integration(client, csrf_tokens):
 
 @pytest.mark.asyncio
 async def test_chat_simulator_mode_when_keys_are_placeholders():
-    """Verify chatbot returns simulated responses when keys are placeholders and simulator is enabled."""
+    """Verify chatbot returns simulated responses when keys are placeholders
+
+    and simulator is enabled.
+    """
     with (
         patch.object(settings.ai, "gemini_api_key", "YOUR_GEMINI_API_KEY_HERE"),
         patch.object(settings.google, "auth_simulator_enabled", True),
@@ -145,3 +148,16 @@ async def test_chat_simulator_mode_when_keys_are_placeholders():
         assert "simulated" in result.reply.lower() or "gemini" in result.reply.lower()
         assert "car" in result.reply.lower() or "transit" in result.reply.lower()
 
+
+@pytest.mark.asyncio
+async def test_http_client_shutdown():
+    """Verify the global HTTPX client can be initialized and shutdown cleanly."""
+    from app.services.http_client import close_http_client, get_http_client
+
+    client = get_http_client()
+    assert client is not None
+    await close_http_client()
+    # verify the global variable is set to None on shutdown
+    from app.services.http_client import _client
+
+    assert _client is None

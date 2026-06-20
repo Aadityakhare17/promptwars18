@@ -71,3 +71,31 @@ def test_rate_limiter_active(client):
             break
 
     assert limit_exceeded is True
+
+
+def test_hsts_and_secure_cookies():
+    """Verify that HSTS header and secure cookies are set when using HTTPS."""
+    from fastapi.testclient import TestClient
+
+    from app.main import create_app
+
+    # Create a fresh app instance to reset rate limits
+    local_app = create_app()
+    local_client = TestClient(local_app)
+
+    # Check HSTS on health endpoint
+    response = local_client.get("/api/health")
+    assert "Strict-Transport-Security" in response.headers
+    assert response.headers["Strict-Transport-Security"] == (
+        "max-age=31536000; includeSubDomains; preload"
+    )
+
+    # Fetch CSRF token over mock HTTPS (using header x-forwarded-proto = https)
+    headers = {"x-forwarded-proto": "https"}
+    response = local_client.get("/api/csrf-token", headers=headers)
+    assert response.status_code == 200
+
+    # Verify cookie secure flag
+    cookies = response.headers.get("set-cookie", "")
+    assert "secure" in cookies.lower()
+    assert "samesite=strict" in cookies.lower()

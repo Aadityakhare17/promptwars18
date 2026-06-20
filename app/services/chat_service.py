@@ -12,6 +12,7 @@ from typing import Optional
 import httpx
 
 from app.config import settings
+from app.services.http_client import get_http_client
 
 logger = logging.getLogger(__name__)
 
@@ -69,17 +70,27 @@ def _get_simulated_ai_response(message: str, provider_name: str) -> str:
         ]
     ):
         return (
-            f"Greetings! I am the simulated **{provider_name.capitalize()}** assistant. "
-            "To reduce your transportation footprint, here are actionable recommendations:\n\n"
-            "1. **Switch to Public Transit or Active Travel**: Opting for trains, buses, biking, or walking "
-            "can reduce your commute emissions by up to 70% compared to driving alone.\n"
-            "2. **Transition to Electric Vehicles (EVs)**: Electric cars emit zero direct tailpipe emissions. "
-            "Even when accounting for electricity grids, they reduce lifetime CO₂ by over 50% in most regions.\n"
-            "3. **Minimize Air Travel**: Flying is highly carbon-intensive. One round-trip trans-atlantic flight "
-            "can emit more CO₂ than an average person's home heating for an entire year. Consider virtual meetings "
+            f"Greetings! I am the simulated "
+            f"**{provider_name.capitalize()}** assistant. "
+            "To reduce your transportation footprint, "
+            "here are actionable recommendations:\n\n"
+            "1. **Switch to Public Transit or Active Travel**: "
+            "Opting for trains, buses, biking, or walking "
+            "can reduce your commute emissions by up to 70% "
+            "compared to driving alone.\n"
+            "2. **Transition to Electric Vehicles (EVs)**: "
+            "Electric cars emit zero direct tailpipe emissions. "
+            "Even when accounting for electricity grids, they "
+            "reduce lifetime CO₂ by over 50% in most regions.\n"
+            "3. **Minimize Air Travel**: Flying is highly carbon-intensive. "
+            "One round-trip trans-atlantic flight "
+            "can emit more CO₂ than an average person's home heating "
+            "for an entire year. Consider virtual meetings "
             "or trains for regional travel.\n"
-            "4. **Eco-Driving Techniques**: Keep tires properly inflated (improves mileage by 3%), avoid sudden "
-            "acceleration, and remove excess weight to optimize fuel efficiency."
+            "4. **Eco-Driving Techniques**: Keep tires properly inflated "
+            "(improves mileage by 3%), avoid sudden "
+            "acceleration, and remove excess weight to optimize "
+            "fuel efficiency."
         )
 
     # 2. Diet / Food
@@ -98,15 +109,23 @@ def _get_simulated_ai_response(message: str, provider_name: str) -> str:
         ]
     ):
         return (
-            f"Hello! I am the simulated **{provider_name.capitalize()}** assistant. "
-            "Adjusting your diet is one of the most effective ways to lower your personal carbon footprint:\n\n"
-            "1. **Reduce Animal Products**: Red meats like beef and lamb generate up to 10-30 times more greenhouse "
-            "gases than plant-based proteins due to methane emissions from enteric fermentation and land use.\n"
-            "2. **Adopt a Plant-Forward Diet**: Incorporating more grains, beans, lentils, and fresh vegetables "
+            f"Hello! I am the simulated "
+            f"**{provider_name.capitalize()}** assistant. "
+            "Adjusting your diet is one of the most effective ways "
+            "to lower your personal carbon footprint:\n\n"
+            "1. **Reduce Animal Products**: Red meats like beef and lamb "
+            "generate up to 10-30 times more greenhouse "
+            "gases than plant-based proteins due to methane emissions "
+            "from enteric fermentation and land use.\n"
+            "2. **Adopt a Plant-Forward Diet**: Incorporating more grains, "
+            "beans, lentils, and fresh vegetables "
             "can reduce your dietary carbon emissions by up to 50%.\n"
-            "3. **Zero Waste Cooking**: About one-third of all food produced globally is wasted. Food waste decomposing "
-            "in landfills produces methane. Plan meals, freeze leftovers, and compost scraps.\n"
-            "4. **Source Locally and Seasonally**: Reduce food miles and energy-intensive greenhouse growing by buying "
+            "3. **Zero Waste Cooking**: About one-third of all food "
+            "produced globally is wasted. Food waste decomposing "
+            "in landfills produces methane. Plan meals, freeze leftovers, "
+            "and compost scraps.\n"
+            "4. **Source Locally and Seasonally**: Reduce food miles and "
+            "energy-intensive greenhouse growing by buying "
             "locally grown, seasonal produce."
         )
 
@@ -126,15 +145,24 @@ def _get_simulated_ai_response(message: str, provider_name: str) -> str:
         ]
     ):
         return (
-            f"Hello! I am the simulated **{provider_name.capitalize()}** assistant. "
-            "Your home's energy consumption is a major footprint category. Here is how to optimize it:\n\n"
-            "1. **Upgrade to Smart Thermostats**: Optimizing heating and cooling schedules can save up to 10-15% "
-            "on utility bills and prevent unnecessary heating/cooling emissions.\n"
-            "2. **Switch to Renewable Power**: Transition your home electricity tariff to a green/renewable tariff, "
-            "or install rooftop solar panels to generate clean energy directly.\n"
-            "3. **Energy Efficiency Upgrades**: Switch to LED bulbs (uses 75% less energy than incandescent bulbs), "
-            "insulate walls and roofs, and choose ENERGY STAR certified appliances.\n"
-            "4. **Unplug Phantom Loads**: Electronics draw power even when turned off. Use smart power strips to shut off "
+            f"Hello! I am the simulated "
+            f"**{provider_name.capitalize()}** assistant. "
+            "Your home's energy consumption is a major footprint "
+            "category. Here is how to optimize it:\n\n"
+            "1. **Upgrade to Smart Thermostats**: Optimizing heating and "
+            "cooling schedules can save up to 10-15% "
+            "on utility bills and prevent unnecessary heating/cooling "
+            "emissions.\n"
+            "2. **Switch to Renewable Power**: Transition your home "
+            "electricity tariff to a green/renewable tariff, "
+            "or install rooftop solar panels to generate clean "
+            "energy directly.\n"
+            "3. **Energy Efficiency Upgrades**: Switch to LED bulbs "
+            "(uses 75% less energy than incandescent bulbs), "
+            "insulate walls and roofs, and choose ENERGY STAR "
+            "certified appliances.\n"
+            "4. **Unplug Phantom Loads**: Electronics draw power even "
+            "when turned off. Use smart power strips to shut off "
             "power to devices when they are not active."
         )
 
@@ -152,43 +180,64 @@ def _get_simulated_ai_response(message: str, provider_name: str) -> str:
         ]
     ):
         return (
-            f"Hello! I am the simulated **{provider_name.capitalize()}** assistant. "
-            "Reducing and managing household waste keeps carbon and methane emissions down:\n\n"
-            "1. **Compost Organics**: Organic waste in landfill decomposes anaerobically to produce methane. Composting "
-            "returns nutrients to the soil and keeps organic matter out of landfills.\n"
-            "2. **Minimize Single-Use Plastics**: Production of plastics is extremely carbon-intensive. Choose reusable "
-            "water bottles, bags, and containers to reduce demand for new plastic production.\n"
-            "3. **Recycle Correctly**: Clean and sort paper, cardboard, glass, and aluminum. Recycling aluminum saves "
+            f"Hello! I am the simulated "
+            f"**{provider_name.capitalize()}** assistant. "
+            "Reducing and managing household waste keeps carbon and "
+            "methane emissions down:\n\n"
+            "1. **Compost Organics**: Organic waste in landfill decomposes "
+            "anaerobically to produce methane. Composting "
+            "returns nutrients to the soil and keeps organic matter "
+            "out of landfills.\n"
+            "2. **Minimize Single-Use Plastics**: Production of plastics is "
+            "extremely carbon-intensive. Choose reusable "
+            "water bottles, bags, and containers to reduce demand "
+            "for new plastic production.\n"
+            "3. **Recycle Correctly**: Clean and sort paper, cardboard, "
+            "glass, and aluminum. Recycling aluminum saves "
             "95% of the energy required to make it from raw materials.\n"
-            "4. **Refuse and Reduce**: The most effective step is refusing unnecessary packaging and reducing purchases."
+            "4. **Refuse and Reduce**: The most effective step is "
+            "refusing unnecessary packaging and reducing purchases."
         )
 
     # 5. Offsets
     if any(
-        k in msg_lower
-        for k in ["offset", "compensate", "neutral", "credit", "tree"]
+        k in msg_lower for k in ["offset", "compensate", "neutral", "credit", "tree"]
     ):
         return (
-            f"Hello! I am the simulated **{provider_name.capitalize()}** assistant. "
-            "Carbon offsetting should be your final step after reducing emissions as much as possible:\n\n"
-            "1. **Carbon Mitigation Hierarchy**: Avoid emissions first, reduce second, and offset only the remaining "
+            f"Hello! I am the simulated "
+            f"**{provider_name.capitalize()}** assistant. "
+            "Carbon offsetting should be your final step after "
+            "reducing emissions as much as possible:\n\n"
+            "1. **Carbon Mitigation Hierarchy**: Avoid emissions first, "
+            "reduce second, and offset only the remaining "
             "unavoidable emissions.\n"
-            "2. **Verify Offset Quality**: Look for projects certified by robust, third-party standards such as the Gold "
-            "Standard, Verified Carbon Standard (VCS), or Climate Action Reserve.\n"
-            "3. **Types of Projects**: Support projects that offer long-term carbon removal (like reforestation and biochar) "
-            "or verified avoidance (like landfill gas capture and clean cookstove distribution)."
+            "2. **Verify Offset Quality**: Look for projects certified by "
+            "robust, third-party standards such as the Gold "
+            "Standard, Verified Carbon Standard (VCS), or Climate "
+            "Action Reserve.\n"
+            "3. **Types of Projects**: Support projects that offer "
+            "long-term carbon removal (like reforestation and biochar) "
+            "or verified avoidance (like landfill gas capture and clean "
+            "cookstove distribution)."
         )
 
     # 6. General / Introduction
     return (
-        f"Hi there! I am your **{provider_name.capitalize()}** sustainability assistant (running in simulated mode). "
-        "I can answer questions and provide detailed recommendations on how to reduce your carbon footprint "
+        f"Hi there! I am your **{provider_name.capitalize()}** "
+        f"sustainability assistant (running in simulated mode). "
+        "I can answer questions and provide detailed recommendations "
+        "on how to reduce your carbon footprint "
         "across key lifestyle areas:\n\n"
-        "- 🚗 **Transportation**: Commuting, vehicles, electric cars, and flights.\n"
-        "- 🍽️ **Diet & Food**: Plant-based meals, animal products, and reducing food waste.\n"
-        "- ⚡ **Home Energy**: Renewable electricity, energy efficiency, smart heating/cooling.\n"
-        "- 🗑️ **Waste & Recycling**: Composting, recycling, single-use plastics, and circular economy.\n"
-        "- 🌳 **Carbon Offsetting**: High-quality offset credits, reforestation, and neutral projects.\n\n"
+        "- 🚗 **Transportation**: Commuting, vehicles, electric cars, "
+        "and flights.\n"
+        "- 🍽️ **Diet & Food**: Plant-based meals, animal products, "
+        "and reducing food waste.\n"
+        "- ⚡ **Home Energy**: Renewable electricity, energy efficiency, "
+        "smart heating/cooling.\n"
+        "- 🗑️ **Waste & Recycling**: Composting, recycling, "
+        "single-use plastics, and circular economy.\n"
+        "- 🌳 **Carbon Offsetting**: High-quality offset credits, "
+        "reforestation, and neutral projects.\n\n"
         "How can I help you take green action today?"
     )
 
@@ -231,10 +280,8 @@ async def _call_gemini(message: str) -> ProviderResult:
     }
 
     try:
-        async with httpx.AsyncClient(
-            timeout=settings.ai.request_timeout_seconds
-        ) as client:
-            response = await client.post(url, json=payload)
+        client = get_http_client()
+        response = await client.post(url, json=payload)
 
         if response.status_code == 200:
             data = response.json()
@@ -313,14 +360,12 @@ async def _call_claude(message: str) -> ProviderResult:
     }
 
     try:
-        async with httpx.AsyncClient(
-            timeout=settings.ai.request_timeout_seconds
-        ) as client:
-            response = await client.post(
-                settings.ai.claude_api_url,
-                headers=headers,
-                json=payload,
-            )
+        client = get_http_client()
+        response = await client.post(
+            settings.ai.claude_api_url,
+            headers=headers,
+            json=payload,
+        )
 
         if response.status_code == 200:
             data = response.json()
@@ -412,10 +457,8 @@ async def _call_openai_compatible(
     }
 
     try:
-        async with httpx.AsyncClient(
-            timeout=settings.ai.request_timeout_seconds
-        ) as client:
-            response = await client.post(api_url, headers=headers, json=payload)
+        client = get_http_client()
+        response = await client.post(api_url, headers=headers, json=payload)
 
         if response.status_code == 200:
             data = response.json()
@@ -617,8 +660,7 @@ def _get_local_response(message: str) -> str:
     ):
         matches.append(_LOCAL_KNOWLEDGE_BASE["waste"])
     if any(
-        k in msg_lower
-        for k in ["offset", "compensate", "neutral", "credit", "tree"]
+        k in msg_lower for k in ["offset", "compensate", "neutral", "credit", "tree"]
     ):
         matches.append(_LOCAL_KNOWLEDGE_BASE["offset"])
 

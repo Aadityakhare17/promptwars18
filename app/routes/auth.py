@@ -10,6 +10,7 @@ from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 
 from app.config import settings
+from app.services.http_client import get_http_client
 
 logger = logging.getLogger(__name__)
 
@@ -67,10 +68,6 @@ async def google_callback(
         }
         logger.info("Auth simulator: logged in Jane Doe successfully.")
     else:
-        # Real Google Auth endpoint call (HTTP POST to token endpoint)
-        # We will make this robust and log errors if it fails due to network or config
-        import httpx
-
         redirect_uri = str(request.url_for("google_callback"))
         token_url = "https://oauth2.googleapis.com/token"
         payload = {
@@ -80,10 +77,9 @@ async def google_callback(
             "redirect_uri": redirect_uri,
             "grant_type": "authorization_code",
         }
-
         try:
-            async with httpx.AsyncClient(timeout=10) as client:
-                token_response = await client.post(token_url, data=payload)
+            client = get_http_client()
+            token_response = await client.post(token_url, data=payload)
 
             if token_response.status_code != 200:
                 raise HTTPException(
@@ -98,8 +94,7 @@ async def google_callback(
             userinfo_url = "https://www.googleapis.com/oauth2/v3/userinfo"
             headers = {"Authorization": f"Bearer {access_token}"}
 
-            async with httpx.AsyncClient(timeout=10) as client:
-                userinfo_response = await client.get(userinfo_url, headers=headers)
+            userinfo_response = await client.get(userinfo_url, headers=headers)
 
             if userinfo_response.status_code != 200:
                 raise HTTPException(
@@ -129,12 +124,15 @@ async def google_callback(
     session_token = secrets.token_hex(32)
     _user_sessions[session_token] = profile
 
+    is_secure = (request.url.scheme == "https") or (
+        request.headers.get("x-forwarded-proto") == "https"
+    )
     response.set_cookie(
         key=_SESSION_COOKIE_NAME,
         value=session_token,
         httponly=True,  # Secure cookie to prevent XSS session hijacking
         samesite="lax",
-        secure=False,  # Set to True with HTTPS in production
+        secure=is_secure,
         max_age=86400 * 7,  # 7 days
     )
 

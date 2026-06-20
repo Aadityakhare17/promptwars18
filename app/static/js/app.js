@@ -229,6 +229,7 @@ const Calculator = {
         const modeSelect = document.getElementById("transport-mode");
 
         const updateLiveStats = () => {
+            if (!distanceDisplay || !fuelDisplay || !co2Display) return;
             const distance = parseFloat(distanceSlider.value) || 0;
             const mode = modeSelect.value;
             distanceDisplay.textContent = distance;

@@ -93,12 +93,15 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 and request.url.path != "/api/csrf-token"
             ):
                 token = generate_csrf_token()
+                is_secure = (request.url.scheme == "https") or (
+                    request.headers.get("x-forwarded-proto") == "https"
+                )
                 response.set_cookie(
                     key=_CSRF_COOKIE_NAME,
                     value=token,
                     httponly=False,  # JS needs to read this
                     samesite="strict",
-                    secure=False,  # Set True in production with HTTPS
+                    secure=is_secure,
                     max_age=3600,
                 )
             return response

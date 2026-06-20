@@ -8,6 +8,8 @@ import json
 import logging
 from typing import Any
 
+import anyio
+
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -20,8 +22,7 @@ try:
 except ImportError:
     _GCS_AVAILABLE = False
     logger.warning(
-        "Google Cloud Storage client libraries not installed. "
-        "Using simulation mode."
+        "Google Cloud Storage client libraries not installed. " "Using simulation mode."
     )
 
 
@@ -70,9 +71,13 @@ class GCSService:
 
         # Real GCS upload logic
         try:
-            bucket = self.client.bucket(self.bucket_name)
-            blob = bucket.blob(blob_name)
-            blob.upload_from_string(payload_str, content_type="application/json")
+
+            def _sync_upload():
+                bucket = self.client.bucket(self.bucket_name)
+                blob = bucket.blob(blob_name)
+                blob.upload_from_string(payload_str, content_type="application/json")
+
+            await anyio.to_thread.run_sync(_sync_upload)
             logger.info(
                 "Successfully uploaded blob '%s' to GCS bucket '%s'",
                 blob_name,

@@ -5,9 +5,8 @@ Provides helper methods to log server-side analytics events to GA4.
 
 import logging
 
-import httpx
-
 from app.config import settings
+from app.services.http_client import get_http_client
 
 logger = logging.getLogger(__name__)
 
@@ -48,8 +47,8 @@ async def log_analytics_event(
     }
 
     try:
-        async with httpx.AsyncClient(timeout=5) as client:
-            response = await client.post(url, json=payload)
+        client = get_http_client()
+        response = await client.post(url, json=payload)
         if response.status_code in (200, 204):
             logger.info("Successfully sent analytics event '%s' to GA4", event_name)
             return True

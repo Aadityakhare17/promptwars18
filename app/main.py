@@ -21,6 +21,17 @@ from app.models import HealthResponse
 from app.routes import auth, carbon, chat, insights
 from app.security.csrf import CSRFMiddleware, generate_csrf_token
 from app.security.rate_limiter import RateLimiterMiddleware
+from app.services.http_client import close_http_client
+
+
+class CachedStaticFiles(StaticFiles):
+    """StaticFiles subclass that appends Cache-Control headers for asset caching."""
+
+    def file_response(self, *args, **kwargs) -> Response:
+        response = super().file_response(*args, **kwargs)
+        response.headers["Cache-Control"] = "public, max-age=31536000"
+        return response
+
 
 # Configure logging
 logging.basicConfig(
@@ -74,6 +85,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "font-src 'self' https://fonts.gstatic.com; "
             "img-src 'self' data:; "
             "connect-src 'self'"
+        )
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains; preload"
         )
         # Remove server identification headers
         if "Server" in response.headers:
@@ -163,6 +177,11 @@ def create_app() -> FastAPI:
     app.include_router(chat.router)
     app.include_router(insights.router)
 
+    @app.on_event("shutdown")
+    async def shutdown_event():
+        """Shutdown event handler to clean up resources."""
+        await close_http_client()
+
     # --- Health Check ---
     @app.get(
         "/api/health",
@@ -180,19 +199,22 @@ def create_app() -> FastAPI:
         tags=["system"],
         summary="Get CSRF token",
     )
-    async def get_csrf_token(response: Response) -> dict:
+    async def get_csrf_token(request: Request, response: Response) -> dict:
         """Generate and return a CSRF token.
 
         Sets the token as a cookie and returns it in the response body
         so the frontend can include it in request headers.
         """
         token = generate_csrf_token()
+        is_secure = (request.url.scheme == "https") or (
+            request.headers.get("x-forwarded-proto") == "https"
+        )
         response.set_cookie(
             key="csrf_token",
             value=token,
             httponly=False,
             samesite="strict",
-            secure=False,  # Set True with HTTPS
+            secure=is_secure,
             max_age=3600,
         )
         return {"csrf_token": token}
@@ -214,14 +236,16 @@ def create_app() -> FastAPI:
     if _STATIC_DIR.exists():
         app.mount(
             "/static",
-            StaticFiles(directory=str(_STATIC_DIR)),
+            CachedStaticFiles(directory=str(_STATIC_DIR)),
             name="static",
         )
 
         @app.get("/", include_in_schema=False)
         async def serve_index() -> FileResponse:
             """Serve the main frontend page."""
-            return FileResponse(str(_STATIC_DIR / "index.html"))
+            response = FileResponse(str(_STATIC_DIR / "index.html"))
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            return response
 
     logger.info(
         "Application started: %s v%s",
