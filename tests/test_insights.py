@@ -65,3 +65,48 @@ def test_insights_api(client, csrf_tokens):
     assert "insights" in data
     assert data["highest_impact_category"] == "Transport"
     assert len(data["insights"]) == 3
+
+
+def test_insights_api_error(client, csrf_tokens):
+    """Verify insights endpoint returns 500 when insights engine raises exception."""
+    from unittest.mock import patch
+
+    headers = {"x-csrf-token": csrf_tokens["token"]}
+    cookies = {"csrf_token": csrf_tokens["cookie"]}
+
+    payload = {
+        "transport": [],
+        "energy": [],
+        "food": [],
+        "waste": [],
+    }
+
+    with patch(
+        "app.routes.insights.generate_insights",
+        side_effect=Exception("Insights engine error"),
+    ):
+        response = client.post(
+            "/api/insights", json=payload, headers=headers, cookies=cookies
+        )
+        assert response.status_code == 500
+        assert "An error occurred generating insights" in response.json()["detail"]
+
+
+def test_insights_fallback_padding():
+    """Verify that insights generator pads tips when category has no preset tips."""
+    from app.models import CarbonSummary, CategoryBreakdown
+    from app.services.insights_engine import generate_insights
+
+    summary = CarbonSummary(
+        total_co2_kg=100.0,
+        breakdown=[
+            CategoryBreakdown(category="Unknown", co2_kg=100.0, percentage=100.0)
+        ],
+        rating="D",
+        comparison_to_average="above",
+    )
+
+    response = generate_insights(summary)
+    assert response.highest_impact_category == "Unknown"
+    assert len(response.insights) == 3
+    assert response.potential_reduction_kg == 30.0

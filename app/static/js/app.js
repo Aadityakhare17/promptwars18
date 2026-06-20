@@ -305,8 +305,14 @@ const Calculator = {
         }
 
         const button = document.getElementById("btn-calculate");
+        const spinner = document.getElementById("calculate-spinner");
+        const btnIcon = document.getElementById("calculate-btn-icon");
+        const btnText = document.getElementById("calculate-btn-text");
+
         button.disabled = true;
-        button.innerHTML = '<span class="spinner"></span> Calculating...';
+        if (spinner) spinner.hidden = false;
+        if (btnIcon) btnIcon.hidden = true;
+        if (btnText) btnText.textContent = "Calculating...";
 
         try {
             const data = await ApiClient.post("/api/carbon/calculate", payload);
@@ -322,7 +328,9 @@ const Calculator = {
             Toast.show(error.message, "error");
         } finally {
             button.disabled = false;
-            button.innerHTML = '<span aria-hidden="true">📊</span> Calculate Footprint';
+            if (spinner) spinner.hidden = true;
+            if (btnIcon) btnIcon.hidden = false;
+            if (btnText) btnText.textContent = "Calculate Footprint";
         }
     },
 
@@ -342,7 +350,7 @@ const Calculator = {
 
         // Breakdown bars
         const breakdownContainer = document.getElementById("result-breakdown");
-        breakdownContainer.innerHTML = ""; // Safe: no user data
+        breakdownContainer.textContent = "";
 
         data.breakdown.forEach((item) => {
             const element = document.createElement("div");
@@ -437,12 +445,12 @@ const Tracker = {
 
             if (data.entries.length === 0) {
                 this._emptyState.hidden = false;
-                this._entriesContainer.innerHTML = "";
+                this._entriesContainer.textContent = "";
                 return;
             }
 
             this._emptyState.hidden = true;
-            this._entriesContainer.innerHTML = ""; // Safe: no user data used in innerHTML
+            this._entriesContainer.textContent = "";
 
             data.entries.forEach((record, index) => {
                 const entry = document.createElement("div");
@@ -499,7 +507,7 @@ const Insights = {
 
         if (!payload) {
             this._emptyState.hidden = false;
-            this._cardsContainer.innerHTML = "";
+            this._cardsContainer.textContent = "";
             return;
         }
 
@@ -513,7 +521,7 @@ const Insights = {
 
     _displayInsights(data) {
         this._emptyState.hidden = true;
-        this._cardsContainer.innerHTML = ""; // Safe: no user data
+        this._cardsContainer.textContent = "";
 
         // Summary header
         const summary = document.createElement("div");

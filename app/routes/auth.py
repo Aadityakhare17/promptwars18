@@ -127,7 +127,8 @@ async def google_callback(
     is_secure = (request.url.scheme == "https") or (
         request.headers.get("x-forwarded-proto") == "https"
     )
-    response.set_cookie(
+    redirect_response = RedirectResponse(url="/")
+    redirect_response.set_cookie(
         key=_SESSION_COOKIE_NAME,
         value=session_token,
         httponly=True,  # Secure cookie to prevent XSS session hijacking
@@ -135,9 +136,7 @@ async def google_callback(
         secure=is_secure,
         max_age=86400 * 7,  # 7 days
     )
-
-    # Redirect user back to home page
-    return RedirectResponse(url="/")
+    return redirect_response
 
 
 @router.get("/user", response_model=dict, summary="Get authenticated profile")

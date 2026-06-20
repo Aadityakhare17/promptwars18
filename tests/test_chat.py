@@ -161,3 +161,21 @@ async def test_http_client_shutdown():
     from app.services.http_client import _client
 
     assert _client is None
+
+
+def test_api_chat_error(client, csrf_tokens):
+    """Verify chat route returns 503 when get_chat_response raises an exception."""
+    headers = {"x-csrf-token": csrf_tokens["token"]}
+    cookies = {"csrf_token": csrf_tokens["cookie"]}
+
+    with patch(
+        "app.routes.chat.get_chat_response", side_effect=Exception("API limit exceeded")
+    ):
+        response = client.post(
+            "/api/chat",
+            json={"message": "Hello"},
+            headers=headers,
+            cookies=cookies,
+        )
+        assert response.status_code == 503
+        assert "Chat service temporarily unavailable" in response.json()["detail"]

@@ -124,7 +124,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 content={"detail": "CSRF token missing"},
             )
 
-        if not hmac_compare(cookie_token.encode(), header_token.encode()):
+        if not _constant_time_compare(cookie_token, header_token):
             return JSONResponse(
                 status_code=403,
                 content={"detail": "CSRF token mismatch"},

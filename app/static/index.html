@@ -178,7 +178,9 @@
                 <!-- Submit -->
                 <div class="card-grid__actions">
                     <button type="submit" class="btn btn--primary" id="btn-calculate">
-                        <span aria-hidden="true">📊</span> Calculate Footprint
+                        <span class="spinner" id="calculate-spinner" aria-hidden="true" hidden></span>
+                        <span id="calculate-btn-icon" aria-hidden="true">📊</span>
+                        <span id="calculate-btn-text">Calculate Footprint</span>
                     </button>
                     <button type="button" class="btn btn--secondary" id="btn-track" aria-describedby="track-hint">
                         <span aria-hidden="true">📌</span> Save &amp; Track

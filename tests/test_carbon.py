@@ -84,3 +84,117 @@ def test_api_carbon_calculate(client, csrf_tokens):
     data = response.json()
     assert data["total_co2_kg"] == 1.92
     assert data["rating"] == "A+"
+
+
+def test_api_carbon_track_and_history(client, csrf_tokens):
+    """Verify tracking and history retrieval endpoints."""
+    headers = {"x-csrf-token": csrf_tokens["token"]}
+    cookies = {"csrf_token": csrf_tokens["cookie"]}
+
+    payload = {
+        "transport": [{"mode": "car_petrol", "distance_km": 50}],
+        "energy": [],
+        "food": [],
+        "waste": [],
+    }
+
+    # 1. Track entry
+    track_resp = client.post(
+        "/api/carbon/track", json=payload, headers=headers, cookies=cookies
+    )
+    assert track_resp.status_code == 200
+    track_data = track_resp.json()
+    assert "session_id" in track_data
+    assert track_data["summary"]["total_co2_kg"] == 9.6
+
+    # 2. Get history (should have 1 entry)
+    cookies["session_id"] = track_resp.cookies.get("session_id")
+    history_resp = client.get("/api/carbon/history", cookies=cookies)
+    assert history_resp.status_code == 200
+    history_data = history_resp.json()
+    assert history_data["count"] == 1
+    assert len(history_data["entries"]) == 1
+    assert history_data["entries"][0]["summary"]["total_co2_kg"] == 9.6
+
+
+def test_api_carbon_track_limit(client, csrf_tokens):
+    """Verify that tracking limit is enforced."""
+    from unittest.mock import patch
+
+    from app.config import settings
+
+    headers = {"x-csrf-token": csrf_tokens["token"]}
+    cookies = {"csrf_token": csrf_tokens["cookie"]}
+
+    payload = {
+        "transport": [],
+        "energy": [],
+        "food": [],
+        "waste": [],
+    }
+
+    with patch.object(settings, "max_history_entries", 1):
+        # First track should succeed
+        resp1 = client.post(
+            "/api/carbon/track", json=payload, headers=headers, cookies=cookies
+        )
+        assert resp1.status_code == 200
+
+        # Second track should exceed limit and fail with 400
+        resp2 = client.post(
+            "/api/carbon/track", json=payload, headers=headers, cookies=cookies
+        )
+        assert resp2.status_code == 400
+        assert "Maximum 1 entries per session" in resp2.json()["detail"]
+
+
+def test_api_carbon_calculate_error(client, csrf_tokens):
+    """Verify calculation endpoint returns 500 when calculator raises exception."""
+    from unittest.mock import patch
+
+    headers = {"x-csrf-token": csrf_tokens["token"]}
+    cookies = {"csrf_token": csrf_tokens["cookie"]}
+
+    payload = {
+        "transport": [],
+        "energy": [],
+        "food": [],
+        "waste": [],
+    }
+
+    with patch(
+        "app.routes.carbon.calculate_footprint", side_effect=Exception("Calc failure")
+    ):
+        resp = client.post(
+            "/api/carbon/calculate", json=payload, headers=headers, cookies=cookies
+        )
+        assert resp.status_code == 500
+        assert "An error occurred during calculation" in resp.json()["detail"]
+
+
+def test_carbon_calculator_rating_b_and_above_average():
+    """Verify B rating and above-average daily comparison threshold."""
+    entry = CarbonEntry(
+        transport=[
+            TransportEntry(mode="car_petrol", distance_km=114.5833)
+        ],  # 22 kg CO2
+        energy=[],
+        food=[],
+        waste=[],
+    )
+    summary = calculate_footprint(entry)
+    assert summary.rating == "B"
+    assert "Above global daily average" in summary.comparison_to_average
+
+
+def test_carbon_calculator_rating_d_and_significantly_above():
+    """Verify D rating and significantly above-average daily comparison threshold."""
+    entry = CarbonEntry(
+        transport=[TransportEntry(mode="car_petrol", distance_km=781.25)],  # 150 kg CO2
+        energy=[],
+        food=[],
+        waste=[],
+    )
+    summary = calculate_footprint(entry)
+    assert summary.rating == "D"
+    assert "Significantly above global daily average" in summary.comparison_to_average

@@ -7,7 +7,7 @@ and retrieving history. All inputs validated via Pydantic models.
 import logging
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.config import settings
 from app.models import CarbonEntry, CarbonSummary
@@ -24,11 +24,12 @@ router = APIRouter(prefix="/api/carbon", tags=["carbon"])
 _session_history: dict[str, list[dict]] = {}
 
 
-def _get_session_id(request: Request) -> str:
-    """Extract or generate session ID from request.
+def _get_or_create_session_id(request: Request, response: Response) -> str:
+    """Extract or generate and set session ID in cookies.
 
     Args:
         request: Incoming HTTP request.
+        response: Response to set cookie on.
 
     Returns:
         Session ID string.
@@ -36,6 +37,17 @@ def _get_session_id(request: Request) -> str:
     session_id = request.cookies.get("session_id")
     if not session_id:
         session_id = uuid4().hex[:16]
+        is_secure = (request.url.scheme == "https") or (
+            request.headers.get("x-forwarded-proto") == "https"
+        )
+        response.set_cookie(
+            key="session_id",
+            value=session_id,
+            httponly=True,
+            samesite="lax",
+            secure=is_secure,
+            max_age=31536000,  # 1 year
+        )
     return session_id
 
 
@@ -45,7 +57,9 @@ def _get_session_id(request: Request) -> str:
     summary="Calculate carbon footprint",
     description="Calculate CO2 emissions from transport, energy, food, and waste.",
 )
-async def calculate_carbon(entry: CarbonEntry, request: Request) -> CarbonSummary:
+async def calculate_carbon(
+    entry: CarbonEntry, request: Request, response: Response
+) -> CarbonSummary:
     """Calculate carbon footprint from activity data.
 
     Args:
@@ -57,7 +71,7 @@ async def calculate_carbon(entry: CarbonEntry, request: Request) -> CarbonSummar
     """
     try:
         summary = calculate_footprint(entry)
-        session_id = _get_session_id(request)
+        session_id = _get_or_create_session_id(request, response)
         await log_analytics_event(
             session_id,
             "carbon_calculated",
@@ -78,17 +92,18 @@ async def calculate_carbon(entry: CarbonEntry, request: Request) -> CarbonSummar
     summary="Track carbon entry",
     description="Store a carbon footprint entry in session history.",
 )
-async def track_entry(entry: CarbonEntry, request: Request) -> dict:
+async def track_entry(entry: CarbonEntry, request: Request, response: Response) -> dict:
     """Store a carbon entry and return its summary.
 
     Args:
         entry: Validated CarbonEntry model.
         request: HTTP request for session management.
+        response: Response to set cookie on.
 
     Returns:
         Dict with session_id and stored summary.
     """
-    session_id = _get_session_id(request)
+    session_id = _get_or_create_session_id(request, response)
 
     # Enforce max history limit
     if session_id in _session_history:
@@ -128,16 +143,17 @@ async def track_entry(entry: CarbonEntry, request: Request) -> dict:
     summary="Get carbon tracking history",
     description="Retrieve all tracked carbon entries for the current session.",
 )
-async def get_history(request: Request) -> dict:
+async def get_history(request: Request, response: Response) -> dict:
     """Retrieve tracking history for current session.
 
     Args:
         request: HTTP request for session identification.
+        response: Response to set cookie on.
 
     Returns:
         Dict with entries list and entry count.
     """
-    session_id = _get_session_id(request)
+    session_id = _get_or_create_session_id(request, response)
     entries = _session_history.get(session_id, [])
 
     return {
