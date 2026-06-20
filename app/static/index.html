@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Track, understand, and reduce your carbon footprint with personalized insights and AI-powered recommendations.">
+    <meta name="theme-color" content="#0a0f1c">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Carbon Footprint Awareness Platform — Track &amp; Reduce Your Impact</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <!-- Skip to main content — a11y -->
+    <a href="#main-content" class="skip-link" id="skip-nav">Skip to main content</a>
+
+    <!-- Navigation -->
+    <nav class="nav" role="navigation" aria-label="Main navigation">
+        <div class="nav__brand">
+            <span class="nav__icon" aria-hidden="true">🌍</span>
+            <span class="nav__title">CarbonTrack</span>
+        </div>
+        <div class="nav__tabs" role="tablist" aria-label="Application sections">
+            <button role="tab" class="nav__tab nav__tab--active" id="tab-calculator" aria-selected="true"
+                aria-controls="panel-calculator" tabindex="0" data-tab="calculator">
+                <span aria-hidden="true">📊</span> Calculator
+            </button>
+            <button role="tab" class="nav__tab" id="tab-tracker" aria-selected="false" aria-controls="panel-tracker"
+                tabindex="-1" data-tab="tracker">
+                <span aria-hidden="true">📈</span> Tracker
+            </button>
+            <button role="tab" class="nav__tab" id="tab-insights" aria-selected="false" aria-controls="panel-insights"
+                tabindex="-1" data-tab="insights">
+                <span aria-hidden="true">💡</span> Insights
+            </button>
+            <button role="tab" class="nav__tab" id="tab-chat" aria-selected="false" aria-controls="panel-chat"
+                tabindex="-1" data-tab="chat">
+                <span aria-hidden="true">🤖</span> AI Chat
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main id="main-content" class="main">
+
+        <!-- Calculator Panel -->
+        <section role="tabpanel" id="panel-calculator" class="panel panel--active" aria-labelledby="tab-calculator">
+            <div class="panel__header">
+                <h1 class="panel__title">Carbon Footprint Calculator</h1>
+                <p class="panel__subtitle">Estimate your daily CO₂ emissions across transport, energy, food, and waste.
+                </p>
+            </div>
+
+            <form id="calculator-form" class="card-grid" aria-label="Carbon footprint calculator" novalidate>
+                <!-- Transport Card -->
+                <div class="card glass-card">
+                    <div class="card__header">
+                        <span class="card__icon" aria-hidden="true">🚗</span>
+                        <h2 class="card__title">Transport</h2>
+                    </div>
+                    <div class="card__body">
+                        <div class="form-group">
+                            <label for="transport-mode" class="form-label">Mode of transport</label>
+                            <select id="transport-mode" class="form-select" aria-describedby="transport-mode-hint"
+                                required>
+                                <option value="">Select mode</option>
+                                <option value="car_petrol">Car (Petrol)</option>
+                                <option value="car_diesel">Car (Diesel)</option>
+                                <option value="car_electric">Car (Electric)</option>
+                                <option value="bus">Bus</option>
+                                <option value="train">Train</option>
+                                <option value="flight_short">Flight (Short-haul)</option>
+                                <option value="flight_long">Flight (Long-haul)</option>
+                                <option value="bicycle">Bicycle</option>
+                                <option value="walking">Walking</option>
+                            </select>
+                            <span id="transport-mode-hint" class="form-hint">Choose your primary mode of travel</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="transport-distance" class="form-label">Distance (km)</label>
+                            <input type="number" id="transport-distance" class="form-input" min="0.1" max="50000"
+                                step="0.1" placeholder="e.g. 25" aria-describedby="transport-distance-hint" required>
+                            <span id="transport-distance-hint" class="form-hint">Daily commute distance in
+                                kilometers</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Energy Card -->
+                <div class="card glass-card">
+                    <div class="card__header">
+                        <span class="card__icon" aria-hidden="true">⚡</span>
+                        <h2 class="card__title">Energy</h2>
+                    </div>
+                    <div class="card__body">
+                        <div class="form-group">
+                            <label for="energy-source" class="form-label">Energy source</label>
+                            <select id="energy-source" class="form-select" required>
+                                <option value="">Select source</option>
+                                <option value="electricity">Electricity (Grid)</option>
+                                <option value="natural_gas">Natural Gas</option>
+                                <option value="heating_oil">Heating Oil</option>
+                                <option value="solar">Solar</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="energy-amount" class="form-label">Usage (kWh)</label>
+                            <input type="number" id="energy-amount" class="form-input" min="0.1" max="100000" step="0.1"
+                                placeholder="e.g. 30" aria-describedby="energy-amount-hint" required>
+                            <span id="energy-amount-hint" class="form-hint">Daily energy consumption in kWh</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Food Card -->
+                <div class="card glass-card">
+                    <div class="card__header">
+                        <span class="card__icon" aria-hidden="true">🍽️</span>
+                        <h2 class="card__title">Food</h2>
+                    </div>
+                    <div class="card__body">
+                        <div class="form-group">
+                            <label for="food-type" class="form-label">Food type</label>
+                            <select id="food-type" class="form-select" required>
+                                <option value="">Select type</option>
+                                <option value="red_meat">Red Meat</option>
+                                <option value="poultry">Poultry</option>
+                                <option value="fish">Fish</option>
+                                <option value="dairy">Dairy</option>
+                                <option value="vegetables">Vegetables</option>
+                                <option value="grains">Grains</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="food-servings" class="form-label">Servings</label>
+                            <input type="number" id="food-servings" class="form-input" min="0.1" max="100" step="0.1"
+                                placeholder="e.g. 3" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Waste Card -->
+                <div class="card glass-card">
+                    <div class="card__header">
+                        <span class="card__icon" aria-hidden="true">🗑️</span>
+                        <h2 class="card__title">Waste</h2>
+                    </div>
+                    <div class="card__body">
+                        <div class="form-group">
+                            <label for="waste-type" class="form-label">Disposal method</label>
+                            <select id="waste-type" class="form-select" required>
+                                <option value="">Select method</option>
+                                <option value="landfill">Landfill</option>
+                                <option value="recycled">Recycled</option>
+                                <option value="composted">Composted</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="waste-weight" class="form-label">Weight (kg)</label>
+                            <input type="number" id="waste-weight" class="form-input" min="0.1" max="10000" step="0.1"
+                                placeholder="e.g. 2" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div class="card-grid__actions">
+                    <button type="submit" class="btn btn--primary" id="btn-calculate">
+                        <span aria-hidden="true">📊</span> Calculate Footprint
+                    </button>
+                    <button type="button" class="btn btn--secondary" id="btn-track" aria-describedby="track-hint">
+                        <span aria-hidden="true">📌</span> Save &amp; Track
+                    </button>
+                    <span id="track-hint" class="visually-hidden">Save this entry to your tracking history</span>
+                </div>
+            </form>
+
+            <!-- Results -->
+            <div id="results-area" class="results" aria-live="polite" aria-atomic="true" hidden>
+                <div class="results__summary glass-card">
+                    <div class="results__total">
+                        <span class="results__label">Total CO₂</span>
+                        <span class="results__value" id="result-total">0</span>
+                        <span class="results__unit">kg</span>
+                    </div>
+                    <div class="results__rating">
+                        <span class="results__label">Rating</span>
+                        <span class="results__badge" id="result-rating">—</span>
+                    </div>
+                    <p class="results__comparison" id="result-comparison"></p>
+                </div>
+                <div class="results__breakdown" id="result-breakdown" role="list"
+                    aria-label="Emissions breakdown by category">
+                </div>
+            </div>
+        </section>
+
+        <!-- Tracker Panel -->
+        <section role="tabpanel" id="panel-tracker" class="panel" hidden aria-labelledby="tab-tracker">
+            <div class="panel__header">
+                <h2 class="panel__title">Emissions Tracker</h2>
+                <p class="panel__subtitle">View your saved carbon footprint entries over time.</p>
+            </div>
+            <div id="tracker-content" class="tracker" aria-live="polite">
+                <div class="tracker__empty glass-card" id="tracker-empty">
+                    <p class="tracker__empty-text">No entries tracked yet.</p>
+                    <p class="tracker__empty-hint">Use the Calculator tab to save entries.</p>
+                </div>
+                <div id="tracker-entries" class="tracker__entries" role="list" aria-label="Tracked emissions entries">
+                </div>
+            </div>
+        </section>
+
+        <!-- Insights Panel -->
+        <section role="tabpanel" id="panel-insights" class="panel" hidden aria-labelledby="tab-insights">
+            <div class="panel__header">
+                <h2 class="panel__title">Personalized Insights</h2>
+                <p class="panel__subtitle">Get actionable tips tailored to your highest-impact areas.</p>
+            </div>
+            <div id="insights-content" class="insights" aria-live="polite">
+                <div class="insights__empty glass-card" id="insights-empty">
+                    <p>Calculate your footprint first to receive personalized recommendations.</p>
+                </div>
+                <div id="insights-cards" class="insights__cards">
+                </div>
+            </div>
+        </section>
+
+        <!-- Chat Panel -->
+        <section role="tabpanel" id="panel-chat" class="panel" hidden aria-labelledby="tab-chat">
+            <div class="panel__header">
+                <h2 class="panel__title">AI Sustainability Assistant</h2>
+                <p class="panel__subtitle">Ask questions about reducing your carbon footprint.</p>
+            </div>
+            <div class="chat glass-card">
+                <div class="chat__messages" id="chat-messages" role="log" aria-label="Chat messages" aria-live="polite">
+                    <div class="chat__welcome">
+                        <p class="chat__welcome-text">
+                            👋 Hi! I'm your AI sustainability assistant. Ask me anything about
+                            reducing your carbon footprint, eco-friendly alternatives, or climate science.
+                        </p>
+                    </div>
+                </div>
+                <form class="chat__input-area" id="chat-form" aria-label="Send a message">
+                    <label for="chat-input" class="visually-hidden">Type your message</label>
+                    <input type="text" id="chat-input" class="chat__input" placeholder="Ask about carbon reduction..."
+                        maxlength="2000" autocomplete="off" required aria-describedby="chat-input-hint">
+                    <span id="chat-input-hint" class="visually-hidden">
+                        Type a question about sustainability and press Enter or click Send
+                    </span>
+                    <button type="submit" class="btn btn--primary chat__send" id="btn-send" aria-label="Send message">
+                        <span aria-hidden="true">→</span> Send
+                    </button>
+                </form>
+                <div class="chat__status" id="chat-status" aria-live="assertive"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true" hidden>
+        <span id="toast-message"></span>
+    </div>
+
+    <footer class="footer" role="contentinfo">
+        <p>&copy; 2026 CarbonTrack — Built for a sustainable future.</p>
+    </footer>
+
+    <script src="/static/js/app.js"></script>
+</body>
+
+</html>
