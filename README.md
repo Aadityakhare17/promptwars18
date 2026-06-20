@@ -1,136 +1,34 @@
-# 🌍 Carbon Footprint Awareness Platform
+# Carbon Footprint Awareness Platform
 
-A production-ready, security-audited platform to **understand**, **track**, and **reduce** individual carbon footprints through personalized insights and AI-powered recommendations. Built using **FastAPI (Python 3.11+)** and a premium dark-themed vanilla CSS/JS web interface.
+A production-ready, security-audited platform to understand, track, and reduce individual carbon footprints through personalized insights and AI-powered recommendations. Built using FastAPI (Python 3.11+) and a premium dark-themed vanilla CSS/JS web interface.
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Project Overview](#project-overview)
-- [Implementation Plan](#implementation-plan)
-- [Development Phases](#development-phases)
 - [Evaluation Criteria Alignment](#evaluation-criteria-alignment)
 - [Features](#features)
 - [Technical Architecture](#technical-architecture)
 - [Project Structure](#project-structure)
+- [Implementation Plan](#implementation-plan)
 - [Google Services Integration](#google-services-integration)
 - [Security Posture](#security-posture)
 - [AI Chatbot Fallback Chain](#ai-chatbot-fallback-chain)
 - [Testing Strategy](#testing-strategy)
 - [Performance Optimizations](#performance-optimizations)
-- [Accessibility (WCAG 2.1 AA)](#accessibility-wcag-21-aa)
+- [Accessibility](#accessibility-wcag-21-aa)
 - [Code Quality Standards](#code-quality-standards)
 - [Getting Started](#getting-started)
 - [Running Quality Audits](#running-quality-audits)
 - [Docker Deployment](#docker-deployment)
 - [API Endpoints Reference](#api-endpoints-reference)
-- [Verification Plan](#verification-plan)
-- [Technical Feasibility](#technical-feasibility)
 
 ---
 
 ## Project Overview
 
-The Carbon Footprint Awareness Platform empowers individuals to quantify their environmental impact across four key lifestyle categories — **Transport**, **Energy**, **Food**, and **Waste** — using verified EPA/DEFRA emission factors. It then provides personalized, actionable recommendations to reduce CO₂ output, backed by a real-time AI assistant with multi-model failover resilience.
-
-### Problem Statement
-
-Individuals often lack clarity on how their daily activities contribute to carbon emissions. Existing tools are either too complex, lack personalization, or don't provide actionable guidance. This platform bridges that gap by offering:
-
-1. **Simple input** — users enter daily activities across 4 categories
-2. **Instant quantification** — EPA/DEFRA emission factors calculate precise CO₂ output
-3. **Personalized insights** — a rule-based engine identifies the highest-impact area and suggests targeted reductions
-4. **AI-powered guidance** — a multi-model chatbot answers sustainability questions with automatic failover resilience
-
----
-
-## Implementation Plan
-
-### Goal
-
-Build a production-grade, single-deployable Python web application that helps individuals understand, track, and reduce their carbon footprint through personalized insights and an AI-powered chatbot — meeting all 5 evaluation criteria (Code Quality, Security, Testing, Performance, Accessibility).
-
-### Design Decisions
-
-| Decision | Rationale |
-|---|---|
-| **FastAPI + Vanilla HTML/CSS/JS** | Single deployable unit, no build toolchain required, maximum control over rendering |
-| **No database (in-memory session)** | YAGNI — tracking is session-scoped; adding SQLite later is trivial if needed |
-| **Pydantic v2 for all I/O** | Type-safe validation at the boundary layer, field-level sanitization via validators |
-| **Multi-model AI fallback** | Maximizes chatbot uptime — if one provider fails, the next takes over automatically |
-| **Local knowledge base** | Ensures the chatbot always responds, even with zero API keys configured |
-| **Token bucket rate limiter** | Efficient in-memory rate limiting without external dependencies (Redis, etc.) |
-| **Double-submit CSRF** | Stateless CSRF protection — no server-side session store needed |
-| **Google Services simulator** | Allows full-feature testing without real Google Cloud credentials |
-
-### Architecture Principles
-
-- **SOLID Principles** — Each module has a single responsibility (calculator, chat, insights, security)
-- **DRY** — Common AI provider interface (`_call_openai_compatible`) shared by ChatGPT, Perplexity, DeepSeek
-- **YAGNI** — No database, no caching layer, no WebSocket — only what's needed
-- **Defense-in-Depth** — Input sanitized at Pydantic model layer AND security middleware
-- **Fail-Safe Defaults** — All API keys default to placeholders; all simulators enabled by default
-
----
-
-## Development Phases
-
-The project was built in 10 sequential phases, each completing before the next began:
-
-### Phase 1: Project Setup ✅
-- [x] `pyproject.toml` — flake8, isort, black, pytest configuration
-- [x] `requirements.txt` — pinned production dependencies
-
-### Phase 2: Core Application ✅
-- [x] `app/__init__.py` — package initialization
-- [x] `app/config.py` — Pydantic Settings with all AI provider keys, rate limits, Google config
-- [x] `app/models.py` — Pydantic v2 request/response schemas with field validators for XSS prevention
-
-### Phase 3: Security Layer ✅
-- [x] `app/security/__init__.py` — security package
-- [x] `app/security/sanitizer.py` — regex-based XSS/SQL injection filters (compiled once, reused O(1))
-- [x] `app/security/rate_limiter.py` — token bucket per-IP rate limiter with Retry-After headers
-- [x] `app/security/csrf.py` — double-submit cookie CSRF with constant-time comparison
-
-### Phase 4: Services (Business Logic) ✅
-- [x] `app/services/__init__.py` — services package
-- [x] `app/services/carbon_calculator.py` — EPA/DEFRA emission factors, O(1) lookups, single-pass computation
-- [x] `app/services/chat_service.py` — 5-LLM fallback chain + local knowledge base (offline mode)
-- [x] `app/services/insights_engine.py` — rule-based recommendation engine with pre-sorted tip database
-- [x] `app/services/gcs_service.py` — Google Cloud Storage upload service with simulator
-- [x] `app/services/analytics.py` — GA4 Measurement Protocol (server-side event tracking)
-
-### Phase 5: API Routes ✅
-- [x] `app/routes/__init__.py` — routes package
-- [x] `app/routes/auth.py` — Google OAuth2 login/callback/logout + simulator bypass
-- [x] `app/routes/carbon.py` — calculate, track, history endpoints with GCS integration
-- [x] `app/routes/chat.py` — AI chatbot route delegating to multi-model service
-- [x] `app/routes/insights.py` — personalized recommendations based on footprint data
-
-### Phase 6: Main Application ✅
-- [x] `app/main.py` — FastAPI app factory, middleware stack, static file serving, health check
-
-### Phase 7: Frontend ✅
-- [x] `app/static/index.html` — semantic HTML5 with full ARIA support, skip link, proper heading hierarchy
-- [x] `app/static/css/style.css` — premium dark theme with glassmorphism, micro-animations, CSS custom properties
-- [x] `app/static/js/app.js` — modular ES6 with CSRF manager, API client, Analytics manager, zero `innerHTML` on user data
-
-### Phase 8: Test Suite ✅
-- [x] `tests/__init__.py` — test package
-- [x] `tests/conftest.py` — shared fixtures (TestClient, CSRF tokens)
-- [x] `tests/test_carbon.py` — carbon calculation unit + API tests (4 tests)
-- [x] `tests/test_chat.py` — chatbot fallback chain tests (5 tests)
-- [x] `tests/test_insights.py` — insights engine tests (3 tests)
-- [x] `tests/test_security.py` — XSS, CSRF, rate limit, size limit tests (5 tests)
-
-### Phase 9: Deployment & Documentation ✅
-- [x] `Dockerfile` — multi-stage production build with non-root user
-- [x] `README.md` — comprehensive documentation (this file)
-
-### Phase 10: Verification ✅
-- [x] Run `flake8` — zero errors
-- [x] Run `isort` — all imports sorted
-- [x] Run `pytest` — all 17 tests pass
+The Carbon Footprint Awareness Platform empowers individuals to quantify their environmental impact across four key lifestyle categories - Transport, Energy, Food, and Waste - using verified EPA/DEFRA emission factors. It then provides personalized, actionable recommendations to reduce CO2 output, backed by a real-time AI assistant with multi-model failover resilience.
 
 ---
 
@@ -138,44 +36,44 @@ The project was built in 10 sequential phases, each completing before the next b
 
 This project is architected to meet the highest standards across all evaluation tiers:
 
-### 🔴 High Impact (Core Functionality & Integrations)
+### High Impact (Core Functionality and Integrations)
 
 | Criteria | Implementation |
 |---|---|
-| **Google Services — Authentication** | Full Google OAuth2 redirect flow with local simulator bypass for testing |
-| **Google Services — Storage** | GCS JSON upload on every `/api/carbon/track` call via `gcs_service.py` |
-| **Google Services — Analytics** | Server-side GA4 Measurement Protocol + client-side dynamic `gtag.js` loader |
-| **Security — Request Handling** | CSRF double-submit cookie, XSS regex sanitization, SQL injection filters |
-| **Security — Sensitive Data Paths** | HTML entity escaping on all Pydantic validators, no raw `innerHTML` on user data |
-| **AI Chatbot with Fallback** | Gemini → Claude → ChatGPT → Perplexity → DeepSeek → Local knowledge base |
+| Google Services - Authentication | Full Google OAuth2 redirect flow with local simulator bypass for testing |
+| Google Services - Storage | GCS JSON upload on every /api/carbon/track call via gcs_service.py |
+| Google Services - Analytics | Server-side GA4 Measurement Protocol + client-side dynamic gtag.js loader |
+| Security - Request Handling | CSRF double-submit cookie, XSS regex sanitization, SQL injection filters |
+| Security - Sensitive Data Paths | HTML entity escaping on all Pydantic validators, no raw innerHTML on user data |
+| AI Chatbot with Fallback | Gemini then Claude then ChatGPT then Perplexity then DeepSeek then Local knowledge base |
 
-### 🟡 Medium Impact (Under-the-Surface Quality)
-
-| Criteria | Implementation |
-|---|---|
-| **Testing — Workflows & Validation** | 17 automated tests: happy paths, edge cases (negative values, cascade failures), security payloads |
-| **Performance — Load Times** | Async `httpx` for all external calls; O(1) dictionary lookups for emission factors |
-| **Performance — Resource Usage** | Token bucket rate limiter; 1 MB request body cap; max 50 entries per category |
-| **Codebase — Clear Structure** | SOLID separation: `routes/`, `services/`, `security/`, `models.py`, `config.py` |
-| **Codebase — Maintainability** | Pydantic v2 settings, typed dataclasses, enterprise naming conventions |
-
-### 🟢 Low Impact (Final Polish)
+### Medium Impact (Under-the-Surface Quality)
 
 | Criteria | Implementation |
 |---|---|
-| **Accessibility — Consistent Structure** | Semantic HTML5 (`<main>`, `<nav>`, `<section>`, `<article>`, `<footer>`) |
-| **Accessibility — Inclusive Interactions** | Full keyboard navigation (Arrow, Home, End keys), skip-to-content link, `aria-live` regions |
-| **Code Formatting** | Zero flake8 errors, isort-organized imports, PEP 8 strict compliance |
-| **Developer Experience** | Structured logging, simulation modes, Dockerfile for one-command deployment |
+| Testing - Workflows and Validation | 17 automated tests: happy paths, edge cases (negative values, cascade failures), security payloads |
+| Performance - Load Times | Async httpx for all external calls; O(1) dictionary lookups for emission factors |
+| Performance - Resource Usage | Token bucket rate limiter; 1 MB request body cap; max 50 entries per category |
+| Codebase - Clear Structure | SOLID separation: routes/, services/, security/, models.py, config.py |
+| Codebase - Maintainability | Pydantic v2 settings, typed dataclasses, enterprise naming conventions |
+
+### Low Impact (Final Polish)
+
+| Criteria | Implementation |
+|---|---|
+| Accessibility - Consistent Structure | Semantic HTML5 (main, nav, section, article, footer) |
+| Accessibility - Inclusive Interactions | Full keyboard navigation (Arrow, Home, End keys), skip-to-content link, aria-live regions |
+| Code Formatting | Zero flake8 errors, isort-organized imports, PEP 8 strict compliance |
+| Developer Experience | Structured logging, simulation modes, Dockerfile for one-command deployment |
 
 ---
 
 ## Features
 
-- **Accurate Calculations**: Computes CO₂ emissions across Transport, Energy, Food, and Waste using official EPA/DEFRA emission factors.
+- **Accurate Calculations**: Computes CO2 emissions across Transport, Energy, Food, and Waste using official EPA/DEFRA emission factors.
 - **Session-Based Tracker**: Save calculations and track history over time directly in the dashboard.
 - **Personalized Insights**: Rule-based recommendation engine offering high-impact tips dynamically based on your profile.
-- **Real-time AI Chatbot**: Interactive helper with a multi-model fallback chain (`Gemini` → `Claude` → `ChatGPT` → `Perplexity` → `DeepSeek` → `Local KB`) to maintain continuous uptime.
+- **Real-time AI Chatbot**: Interactive helper with a multi-model fallback chain (Gemini, Claude, ChatGPT, Perplexity, DeepSeek, Local KB) to maintain continuous uptime.
 - **Enterprise-Grade Security**: Strict XSS filters, Double-Submit CSRF cookie validation, rate limiting, request body limits, and secure headers.
 - **WCAG 2.1 AA Compliant**: Tab-accessible layouts, proper ARIA labeling, visual focus-visible indicators, skip link, and native semantic elements.
 - **Google Services**: OAuth2 authentication, Cloud Storage uploads, and Analytics 4 event tracking (server-side + client-side).
@@ -185,57 +83,57 @@ This project is architected to meet the highest standards across all evaluation 
 ## Technical Architecture
 
 ```
-┌────────────────────────────────────────────────────────┐
-│                    Client (Browser)                    │
-│  ┌──────────┐  ┌──────────┐  ┌───────┐  ┌──────────┐  │
-│  │Calculator│  │ Tracker  │  │Insights│  │ AI Chat  │  │
-│  └────┬─────┘  └────┬─────┘  └───┬───┘  └────┬─────┘  │
-│       │              │            │            │        │
-│  ┌────┴──────────────┴────────────┴────────────┴────┐  │
-│  │        Analytics Manager (gtag.js / GA4)         │  │
-│  └──────────────────────┬───────────────────────────┘  │
-└─────────────────────────┼──────────────────────────────┘
-                          │ HTTPS + CSRF Token
-┌─────────────────────────┼──────────────────────────────┐
-│                    FastAPI Backend                      │
-│  ┌──────────────────────┴───────────────────────────┐  │
-│  │             Middleware Stack                      │  │
-│  │  CORS → Security Headers → Size Limiter          │  │
-│  │  → Rate Limiter → CSRF Validator                 │  │
-│  └──────────────────────┬───────────────────────────┘  │
-│                         │                              │
-│  ┌──────────────────────┴───────────────────────────┐  │
-│  │                 API Routes                       │  │
-│  │  /api/auth/*  /api/carbon/*  /api/chat           │  │
-│  │  /api/insights  /api/health  /api/csrf-token     │  │
-│  │  /api/analytics/config                           │  │
-│  └────┬──────────────┬─────────────┬────────────────┘  │
-│       │              │             │                   │
-│  ┌────┴────┐  ┌──────┴──────┐  ┌──┴──────────────┐    │
-│  │ Carbon  │  │  Insights   │  │  Chat Service   │    │
-│  │ Calc.   │  │  Engine     │  │  (5-LLM chain)  │    │
-│  └─────────┘  └─────────────┘  └──┬──────────────┘    │
-│                                   │                   │
-│                        ┌──────────┴──────────┐        │
-│                        │  Local Knowledge    │        │
-│                        │  Base (Offline)     │        │
-│                        └─────────────────────┘        │
-│                                                       │
-│  ┌─────────────┐  ┌─────────────┐  ┌──────────────┐  │
-│  │ GCS Service │  │  GA4 Event  │  │ Google OAuth  │  │
-│  │  (Storage)  │  │  Tracker    │  │  (Auth)       │  │
-│  └─────────────┘  └─────────────┘  └──────────────┘  │
-└───────────────────────────────────────────────────────┘
++--------------------------------------------------------+
+|                    Client (Browser)                    |
+|  +----------+  +----------+  +-------+  +----------+  |
+|  |Calculator|  | Tracker  |  |Insights|  | AI Chat  |  |
+|  +----+-----+  +----+-----+  +---+---+  +----+-----+  |
+|       |              |            |            |        |
+|  +----+--------------+------------+------------+----+  |
+|  |        Analytics Manager (gtag.js / GA4)         |  |
+|  +-----------------------+--------------------------+  |
++--------------------------|-----------------------------+
+                           | HTTPS + CSRF Token
++--------------------------|-----------------------------+
+|                    FastAPI Backend                      |
+|  +-----------------------+--------------------------+  |
+|  |             Middleware Stack                      |  |
+|  |  CORS -> Security Headers -> Size Limiter        |  |
+|  |  -> Rate Limiter -> CSRF Validator               |  |
+|  +-----------------------+--------------------------+  |
+|                          |                             |
+|  +-----------------------+--------------------------+  |
+|  |                 API Routes                       |  |
+|  |  /api/auth/*  /api/carbon/*  /api/chat           |  |
+|  |  /api/insights  /api/health  /api/csrf-token     |  |
+|  |  /api/analytics/config                           |  |
+|  +----+--------------+-------------+----------------+  |
+|       |              |             |                   |
+|  +----+----+  +------+------+  +--+--------------+    |
+|  | Carbon  |  |  Insights   |  |  Chat Service   |    |
+|  | Calc.   |  |  Engine     |  |  (5-LLM chain)  |    |
+|  +---------+  +-------------+  +--+--------------+    |
+|                                   |                   |
+|                        +----------+----------+        |
+|                        |  Local Knowledge    |        |
+|                        |  Base (Offline)     |        |
+|                        +---------------------+        |
+|                                                       |
+|  +-------------+  +-------------+  +--------------+  |
+|  | GCS Service |  |  GA4 Event  |  | Google OAuth  |  |
+|  |  (Storage)  |  |  Tracker    |  |  (Auth)       |  |
+|  +-------------+  +-------------+  +--------------+  |
++-------------------------------------------------------+
 ```
 
 | Layer | Technology |
 |---|---|
-| **Backend** | FastAPI (Python 3.11+), Uvicorn ASGI |
-| **Frontend** | Vanilla HTML5, CSS3 (Grid, Custom Properties, Glassmorphism), ES6 JavaScript |
-| **Config & Validation** | Pydantic v2 + Pydantic Settings |
-| **Testing** | Pytest + pytest-asyncio + HTTPX TestClient |
-| **Containerization** | Docker (multi-stage build) |
-| **Google Services** | OAuth2, Cloud Storage, Analytics 4 |
+| Backend | FastAPI (Python 3.11+), Uvicorn ASGI |
+| Frontend | Vanilla HTML5, CSS3 (Grid, Custom Properties, Glassmorphism), ES6 JavaScript |
+| Config and Validation | Pydantic v2 + Pydantic Settings |
+| Testing | Pytest + pytest-asyncio + HTTPX TestClient |
+| Containerization | Docker (multi-stage build) |
+| Google Services | OAuth2, Cloud Storage, Analytics 4 |
 
 ---
 
@@ -243,105 +141,229 @@ This project is architected to meet the highest standards across all evaluation 
 
 ```
 promptwars18/
-├── app/
-│   ├── __init__.py
-│   ├── config.py                  # Pydantic Settings (API keys, limits, Google config)
-│   ├── main.py                    # FastAPI app factory + middleware stack
-│   ├── models.py                  # Pydantic request/response schemas + validators
-│   ├── routes/
-│   │   ├── __init__.py
-│   │   ├── auth.py                # Google OAuth2 login/callback/logout
-│   │   ├── carbon.py              # Carbon calculate, track, history endpoints
-│   │   ├── chat.py                # AI chatbot with fallback chain
-│   │   └── insights.py            # Personalized recommendations
-│   ├── security/
-│   │   ├── __init__.py
-│   │   ├── csrf.py                # Double-submit cookie CSRF middleware
-│   │   ├── rate_limiter.py        # Token bucket per-IP rate limiter
-│   │   └── sanitizer.py           # XSS/SQL injection input sanitization
-│   ├── services/
-│   │   ├── __init__.py
-│   │   ├── analytics.py           # GA4 Measurement Protocol (server-side)
-│   │   ├── carbon_calculator.py   # EPA/DEFRA emission factor calculations
-│   │   ├── chat_service.py        # Multi-LLM fallback + local knowledge base
-│   │   ├── gcs_service.py         # Google Cloud Storage upload service
-│   │   └── insights_engine.py     # Rule-based recommendation engine
-│   └── static/
-│       ├── css/
-│       │   └── style.css          # Premium dark theme, glassmorphism, animations
-│       ├── js/
-│       │   └── app.js             # Frontend state management, API client, Analytics
-│       └── index.html             # Semantic HTML5 with full ARIA support
-├── tests/
-│   ├── __init__.py
-│   ├── conftest.py                # Shared fixtures (TestClient, CSRF tokens)
-│   ├── test_carbon.py             # Carbon calculation unit + API tests
-│   ├── test_chat.py               # Chatbot fallback chain tests
-│   ├── test_insights.py           # Insights engine tests
-│   └── test_security.py           # XSS, CSRF, rate limit, size limit tests
-├── .flake8                        # Flake8 configuration
-├── pyproject.toml                 # Project metadata + pytest config
-├── requirements.txt               # Python dependencies
-├── Dockerfile                     # Production Docker image
-└── README.md                      # This file
+  app/
+    __init__.py
+    config.py                  # Pydantic Settings (API keys, limits, Google config)
+    main.py                    # FastAPI app factory + middleware stack
+    models.py                  # Pydantic request/response schemas + validators
+    routes/
+      __init__.py
+      auth.py                  # Google OAuth2 login/callback/logout
+      carbon.py                # Carbon calculate, track, history endpoints
+      chat.py                  # AI chatbot with fallback chain
+      insights.py              # Personalized recommendations
+    security/
+      __init__.py
+      csrf.py                  # Double-submit cookie CSRF middleware
+      rate_limiter.py          # Token bucket per-IP rate limiter
+      sanitizer.py             # XSS/SQL injection input sanitization
+    services/
+      __init__.py
+      analytics.py             # GA4 Measurement Protocol (server-side)
+      carbon_calculator.py     # EPA/DEFRA emission factor calculations
+      chat_service.py          # Multi-LLM fallback + local knowledge base
+      gcs_service.py           # Google Cloud Storage upload service
+      insights_engine.py       # Rule-based recommendation engine
+    static/
+      css/
+        style.css              # Premium dark theme, glassmorphism, animations
+      js/
+        app.js                 # Frontend state management, API client, Analytics
+      index.html               # Semantic HTML5 with full ARIA support
+  tests/
+    __init__.py
+    conftest.py                # Shared fixtures (TestClient, CSRF tokens)
+    test_carbon.py             # Carbon calculation unit + API tests
+    test_chat.py               # Chatbot fallback chain tests
+    test_insights.py           # Insights engine tests
+    test_security.py           # XSS, CSRF, rate limit, size limit tests
+  .flake8                      # Flake8 configuration
+  pyproject.toml               # Project metadata + pytest config
+  requirements.txt             # Python dependencies
+  Dockerfile                   # Production Docker image
+  README.md                    # This file
+```
+
+---
+
+## Implementation Plan
+
+Design and implement a production-ready, secure, and efficient Carbon Footprint Awareness Platform that helps individuals track, understand, and reduce their carbon footprint through simple actions and personalized insights. It includes a fallback chatbot logic (Gemini -> Claude -> ChatGPT -> Perplexity -> DeepSeek) to handle token or rate limits.
+
+### Design Decisions
+
+**API Keys Hardcoded**: Per project requirements, the API keys are hardcoded in config.py. In a true production environment, these should be loaded from environment variables or a secret manager. We provide a secure config model using Pydantic Settings.
+
+**PEP8 and Formatting**: We run flake8 and isort to ensure strict conformance. Zero lint errors across the entire codebase.
+
+### Architecture Layers
+
+The platform is built as a multi-layer application:
+
+1. **Backend** - FastAPI + Pydantic v2 (validation and settings)
+2. **Frontend** - Premium single-page dashboard, responsive, WCAG 2.1 AA compliant, vanilla CSS with micro-interactions
+3. **Tests** - Pytest suite verifying calculations, edge cases, security, and fallback LLM logic
+
+---
+
+### Backend Implementation
+
+#### app/config.py
+Configuration settings using Pydantic Settings, containing hardcoded API keys for all LLM providers, Google Services config (OAuth2, GCS, GA4), rate limiting parameters, and security settings.
+
+#### app/models.py
+Pydantic v2 schemas with built-in XSS sanitization validators:
+- CarbonEntry - Footprint entry validation across Transport, Energy, Food, and Waste categories
+- ChatRequest / ChatResponse - Chat request/response schemas with input sanitization
+- CarbonSummary / CategoryBreakdown - Calculation result models
+- InsightItem / InsightResponse - Personalized recommendation models
+- Enum classes: TransportMode, EnergySource, FoodType, WasteType
+
+#### app/services/carbon_calculator.py
+Service layer for calculating CO2 emissions (in kg) based on EPA and DEFRA emission factors:
+- **Transport**: Per-km factors for petrol car (0.192), diesel (0.171), electric (0.053), bus (0.089), train (0.041), flights, bicycle, walking
+- **Energy**: Per-kWh factors for grid electricity (0.233), natural gas (0.184), solar (0.041), wind (0.011)
+- **Food**: Per-kg factors for beef (27.0), lamb (39.2), chicken (6.9), fish (6.1), dairy (3.2), vegetables (2.0), fruits (1.1), grains (1.4)
+- **Waste**: Per-kg factors for general (0.587), recycled (0.021), composted (0.010), landfill (0.587), hazardous (1.200)
+
+#### app/services/chat_service.py
+Real-time chatbot router with sequential fallback and local knowledge base:
+```
+Gemini (Primary) -> Claude (Fallback 1) -> ChatGPT (Fallback 2) -> Perplexity (Fallback 3) -> DeepSeek (Fallback 4) -> Local Knowledge Base (Offline)
+```
+Each provider is called with httpx.AsyncClient and a 15-second timeout. The local knowledge base covers: transportation, diet/food, home energy, waste management, carbon offsets, water conservation, and sustainable shopping.
+
+#### app/services/insights_engine.py
+Rule-based recommendation engine that identifies the highest-impact category and returns actionable, pre-sorted tips. No unnecessary AI calls (YAGNI principle). Tips database covers Transport, Energy, Food, and Waste with impact ratings and difficulty levels.
+
+#### app/services/gcs_service.py
+Google Cloud Storage upload service. Every tracked entry is uploaded as a JSON blob to GCS bucket. Includes simulation mode for local testing without credentials.
+
+#### app/services/analytics.py
+Server-side GA4 Measurement Protocol event tracking. Logs carbon_calculated, carbon_tracked, chat_message_sent, insights_viewed events.
+
+#### app/main.py
+FastAPI application factory with full middleware stack:
+- CORS middleware (restricted origins)
+- Security headers (CSP, X-Frame-Options, X-XSS-Protection, Referrer-Policy)
+- Request size limiter (1 MB cap)
+- Token bucket rate limiter (30 req/min general, 10 req/min chat)
+- CSRF double-submit cookie validator
+
+#### app/routes/
+API route modules:
+- carbon.py - /api/carbon/calculate, /api/carbon/track, /api/carbon/history
+- chat.py - /api/chat (AI assistant)
+- insights.py - /api/insights (personalized tips)
+- auth.py - /api/auth/google/login, /api/auth/google/callback, /api/auth/user, /api/auth/logout
+
+#### app/security/
+Security middleware modules:
+- csrf.py - Double-submit cookie CSRF protection
+- rate_limiter.py - Token bucket per-IP rate limiter
+- sanitizer.py - XSS and SQL injection pattern detection and sanitization
+
+---
+
+### Frontend Implementation
+
+#### app/static/index.html
+Semantic HTML5 structure with full ARIA support:
+- Skip-to-content link, proper heading hierarchy
+- Tab-based navigation with role="tablist", role="tab", role="tabpanel"
+- Live regions (aria-live="polite", aria-live="assertive") for dynamic updates
+- Screen reader optimized with aria-hidden on decorative elements
+
+#### app/static/css/style.css
+Premium dark mode CSS (~25KB):
+- HSL color system with CSS custom properties
+- Glassmorphism card panels with backdrop-filter: blur()
+- Smooth gradient backgrounds and animated transitions
+- Focus-visible indicators for keyboard navigation
+- Responsive grid layout (mobile-first)
+- Micro-animations on hover, form interactions, and tab switching
+
+#### app/static/js/app.js
+Vanilla ES6 JavaScript handling:
+- Client-side state management for calculator, tracker, and history
+- CSRF token fetching and header injection on all POST requests
+- Dynamic GA4 gtag.js loader from /api/analytics/config
+- Keyboard navigation (Arrow, Home, End keys for tabs)
+- Real-time chat with streaming UI feedback
+- textContent (never innerHTML) for all user data to prevent XSS
+
+---
+
+### Testing Implementation
+
+#### tests/test_carbon.py (4 tests)
+- Happy path: Multi-category calculation with correct emission factors
+- Zero values: Entries with 0 quantity produce 0 emissions
+- Negative values: Rejected by Pydantic validators
+- API integration: Full request/response cycle via TestClient
+
+#### tests/test_chat.py (5 tests)
+- Gemini success path
+- Gemini fails then falls back to Claude
+- Gemini + Claude fail then falls back to ChatGPT
+- All providers fail then local knowledge base response
+- API route integration test
+
+#### tests/test_insights.py (3 tests)
+- Transport-heavy profile generates transport tips
+- Energy-heavy profile generates energy tips
+- API route integration test
+
+#### tests/test_security.py (5 tests)
+- XSS payload sanitization (script tags stripped)
+- CSRF enforcement on POST without token
+- CSRF token mismatch rejection
+- Request body size limit (over 1MB rejected with 413)
+- Rate limiter activation (burst requests throttled)
+
+### Verification Commands
+
+```bash
+# Run all 17 tests
+pytest -v
+
+# Lint check (zero errors expected)
+flake8 app/ tests/
+
+# Import sort check
+isort --check-only app/ tests/
 ```
 
 ---
 
 ## Google Services Integration
 
-### Implementation Plan
-
-To ensure 100% accuracy against the evaluation checklist ("Google services are being actively integrated, including authentication, storage, or analytics capabilities"), the platform integrates three distinct Google Cloud services with a **simulator mode** for frictionless local testing.
-
 ### 1. Authentication (OAuth2)
 
 | Feature | Details |
 |---|---|
-| **Flow** | Authorization Code Grant via `accounts.google.com` |
-| **Callback** | `/api/auth/google/callback` exchanges code for tokens, fetches profile |
-| **Session** | Secure `httponly` cookie with `secrets.token_hex(32)` |
-| **Simulator** | When `auth_simulator_enabled=True`, auto-creates a mock "Jane Doe" profile |
-
-**Planned Design:**
-- Backend (`app/routes/auth.py`): Redirects user to Google OAuth2 consent screen, exchanges Auth Code for Token, fetches Google Profile (Name, Email, Picture), sets secure session cookie.
-- Frontend: Premium "Sign in with Google" button in navigation, dynamically displays profile picture and name with logout dropdown.
-- Developer Bypass: `auth_simulator_enabled=True` in config creates instant mock session without Google Console credentials.
+| Flow | Authorization Code Grant via accounts.google.com |
+| Callback | /api/auth/google/callback exchanges code for tokens, fetches profile |
+| Session | Secure httponly cookie with secrets.token_hex(32) |
+| Simulator | When auth_simulator_enabled=True, auto-creates a mock Jane Doe profile |
 
 ### 2. Cloud Storage (GCS)
 
 | Feature | Details |
 |---|---|
-| **Trigger** | Every `POST /api/carbon/track` call |
-| **Blob Path** | `history/{session_id}/{rating}_{uuid}.json` |
-| **Content** | Full entry + summary JSON payload |
-| **Simulator** | Logs the upload to console when GCS credentials are absent |
-
-**Planned Design:**
-- `GcsService` uploads calculated carbon footprints as JSON records to a GCS bucket.
-- Leverages Google OAuth2 tokens or Service Account credentials.
-- Falls back gracefully to local session-based storage if credentials are not configured, logging detailed status reports.
+| Trigger | Every POST /api/carbon/track call |
+| Blob Path | history/{session_id}/{rating}_{uuid}.json |
+| Content | Full entry + summary JSON payload |
+| Simulator | Logs the upload to console when GCS credentials are absent |
 
 ### 3. Analytics (GA4)
 
 | Feature | Details |
 |---|---|
-| **Server-Side** | `log_analytics_event()` posts to GA4 Measurement Protocol |
-| **Client-Side** | `Analytics.initialize()` dynamically loads `gtag.js` from `/api/analytics/config` |
-| **Events Tracked** | `carbon_calculated`, `carbon_tracked`, `chat_message_sent`, `insights_viewed`, `tab_activated` |
-| **Simulator** | Logs events to console when using mock measurement ID |
-
-**Planned Design:**
-- Frontend embeds standard GA4 Measurement tag script in `<head>`.
-- Dynamic pageview events triggered in JS when switching tabs.
-- Custom GA4 event tracking on "Calculate" and "Save & Track" button clicks.
-
-### Pinned Dependencies for Google Services
-
-```
-google-auth>=2.29.0        # Google Identity verification
-google-cloud-storage>=2.16.0  # GCS file operations
-```
+| Server-Side | log_analytics_event() posts to GA4 Measurement Protocol |
+| Client-Side | Analytics.initialize() dynamically loads gtag.js from /api/analytics/config |
+| Events Tracked | carbon_calculated, carbon_tracked, chat_message_sent, insights_viewed, tab_activated |
+| Simulator | Logs events to console when using mock measurement ID |
 
 ---
 
@@ -351,42 +373,42 @@ google-cloud-storage>=2.16.0  # GCS file operations
 
 | Vulnerability | Mitigation |
 |---|---|
-| **A03: Injection (XSS)** | Regex-based script tag stripping + `html.escape()` on all user text fields |
-| **A03: Injection (SQL)** | SQL pattern detection in `sanitizer.py`; parameterized queries only |
-| **A05: Security Misconfiguration** | CORS restricted to explicit origins; `/docs` disabled in production |
-| **A07: Cross-Site Request Forgery** | Double-submit cookie pattern with `X-CSRF-Token` header validation |
-| **A08: Software Component Integrity** | Pinned dependency versions in `requirements.txt` |
+| A03: Injection (XSS) | Regex-based script tag stripping + html.escape() on all user text fields |
+| A03: Injection (SQL) | SQL pattern detection in sanitizer.py; parameterized queries only |
+| A05: Security Misconfiguration | CORS restricted to explicit origins; /docs disabled in production |
+| A07: Cross-Site Request Forgery | Double-submit cookie pattern with X-CSRF-Token header validation |
+| A08: Software Component Integrity | Pinned dependency versions in requirements.txt |
 
 ### Middleware Stack (applied in order)
 
 ```
-Request → CORS → Security Headers → Size Limiter → Rate Limiter → CSRF → Route Handler
+Request -> CORS -> Security Headers -> Size Limiter -> Rate Limiter -> CSRF -> Route Handler
 ```
 
-1. **CORS**: Restricts origins to `localhost:8000` only
+1. **CORS**: Restricts origins to localhost:8000 only
 2. **Security Headers**: CSP, X-Frame-Options (DENY), X-XSS-Protection, Referrer-Policy, Permissions-Policy
-3. **Request Size Limiter**: Rejects bodies > 1 MB (HTTP 413)
-4. **Rate Limiter**: Token bucket algorithm — 30 req/min general, 10 req/min for chat
-5. **CSRF**: Validates `X-CSRF-Token` header matches `csrf_token` cookie on all POST requests
+3. **Request Size Limiter**: Rejects bodies over 1 MB (HTTP 413)
+4. **Rate Limiter**: Token bucket algorithm - 30 req/min general, 10 req/min for chat
+5. **CSRF**: Validates X-CSRF-Token header matches csrf_token cookie on all POST requests
 
 ---
 
 ## AI Chatbot Fallback Chain
 
-The chatbot uses a **sequential failover strategy** to maximize uptime:
+The chatbot uses a sequential failover strategy to maximize uptime:
 
 ```
 Gemini (Primary)
-    ↓ on error/timeout/rate-limit
+    | on error/timeout/rate-limit
 Claude (Fallback 1)
-    ↓ on error/timeout/rate-limit
+    | on error/timeout/rate-limit
 ChatGPT (Fallback 2)
-    ↓ on error/timeout/rate-limit
+    | on error/timeout/rate-limit
 Perplexity (Fallback 3)
-    ↓ on error/timeout/rate-limit
+    | on error/timeout/rate-limit
 DeepSeek (Fallback 4)
-    ↓ on error/timeout/rate-limit
-Local Knowledge Base (Offline — always succeeds)
+    | on error/timeout/rate-limit
+Local Knowledge Base (Offline - always succeeds)
 ```
 
 ### Fallback Triggers
@@ -398,22 +420,11 @@ Local Knowledge Base (Offline — always succeeds)
 
 ### Local Knowledge Base Topics
 When all LLM providers are unavailable, the system scans the user query for keywords and returns curated advice on:
-- **Transportation** — driving, flights, public transit
-- **Diet/Food** — red meat, dairy, plant-based alternatives
-- **Home Energy** — electricity, heating, solar
-- **Waste Management** — recycling, composting, plastics
-- **Carbon Offsets** — certified projects, reforestation
-
-### Fallback Chain Design Rationale
-
-| Provider | Why This Order |
-|---|---|
-| **Gemini** | Primary — Google ecosystem, fast, generous free tier |
-| **Claude** | Best reasoning quality for nuanced sustainability advice |
-| **ChatGPT** | Widest general knowledge, reliable uptime |
-| **Perplexity** | Search-augmented — can cite recent data |
-| **DeepSeek** | Cost-effective fallback with good performance |
-| **Local KB** | Zero-dependency guarantee — always works offline |
+- **Transportation** - driving, flights, public transit
+- **Diet/Food** - red meat, dairy, plant-based alternatives
+- **Home Energy** - electricity, heating, solar
+- **Waste Management** - recycling, composting, plastics
+- **Carbon Offsets** - certified projects, reforestation
 
 ---
 
@@ -423,18 +434,11 @@ When all LLM providers are unavailable, the system scans the user query for keyw
 
 | Test File | Coverage | Count |
 |---|---|---|
-| `test_carbon.py` | Happy path calculations, zero-value edge case, negative value rejection, API integration | 4 |
-| `test_chat.py` | Gemini success, fallback to Claude, fallback to ChatGPT, all-fail local KB, route integration | 5 |
-| `test_insights.py` | Insight generation, category identification, empty data handling | 3 |
-| `test_security.py` | XSS sanitization, CSRF enforcement, token mismatch, body size limit, rate limiter | 5 |
+| test_carbon.py | Happy path calculations, zero-value edge case, negative value rejection, API integration | 4 |
+| test_chat.py | Gemini success, fallback to Claude, fallback to ChatGPT, all-fail local KB, route integration | 5 |
+| test_insights.py | Insight generation, category identification, empty data handling | 3 |
+| test_security.py | XSS sanitization, CSRF enforcement, token mismatch, body size limit, rate limiter | 5 |
 | **Total** | | **17** |
-
-### Test Categories
-
-1. **Unit Tests** — Carbon calculator emission factor accuracy, insights engine category detection
-2. **Integration Tests** — Full API route tests with TestClient (calculate, track, chat, insights)
-3. **Security Tests** — XSS payload sanitization, CSRF token validation, rate limit enforcement
-4. **Edge Cases** — Zero values, negative inputs, empty categories, all-providers-fail scenario
 
 ### Running Tests
 
@@ -455,12 +459,12 @@ pytest tests/test_chat.py -v
 
 | Optimization | Details |
 |---|---|
-| **O(1) Emission Lookups** | All emission factors stored in typed dictionaries keyed by enum |
-| **Single-Pass Calculation** | One iteration over each category list using `sum()` with generator |
-| **Compiled Regex** | All XSS/SQL patterns compiled at module load time, reused per request |
-| **Async HTTP** | All external API calls use `httpx.AsyncClient` with structured timeouts |
-| **Token Bucket Rate Limit** | Efficient per-IP rate limiting without external dependencies |
-| **Minimal DOM Manipulation** | `textContent` (not `innerHTML`) for all user-facing data to prevent XSS and reduce reflow |
+| O(1) Emission Lookups | All emission factors stored in typed dictionaries keyed by enum |
+| Single-Pass Calculation | One iteration over each category list using sum() with generator |
+| Compiled Regex | All XSS/SQL patterns compiled at module load time, reused per request |
+| Async HTTP | All external API calls use httpx.AsyncClient with structured timeouts |
+| Token Bucket Rate Limit | Efficient per-IP rate limiting without external dependencies |
+| Minimal DOM Manipulation | textContent (not innerHTML) for all user-facing data to prevent XSS and reduce reflow |
 
 ---
 
@@ -468,15 +472,15 @@ pytest tests/test_chat.py -v
 
 | Requirement | Implementation |
 |---|---|
-| **Skip Navigation** | `<a href="#main-content" class="skip-link">` as first focusable element |
-| **Semantic Structure** | `<nav>`, `<main>`, `<section>`, `<article>`, `<footer>` with proper heading hierarchy |
-| **ARIA Roles** | `role="tablist"`, `role="tab"`, `role="tabpanel"`, `role="progressbar"`, `role="log"`, `role="alert"` |
-| **ARIA States** | `aria-selected`, `aria-controls`, `aria-labelledby`, `aria-describedby`, `aria-live`, `aria-atomic` |
-| **Keyboard Navigation** | Arrow keys cycle tabs, Home/End jump to first/last, Enter activates |
-| **Focus Management** | `:focus-visible` CSS outlines, `tabindex` managed dynamically |
-| **Screen Reader Live Regions** | `aria-live="polite"` for results/tracker, `aria-live="assertive"` for status updates |
-| **Color Contrast** | HSL-based color palette designed for minimum 4.5:1 contrast ratio |
-| **Decorative Icons** | All emoji icons wrapped with `aria-hidden="true"` |
+| Skip Navigation | Skip-link as first focusable element |
+| Semantic Structure | nav, main, section, article, footer with proper heading hierarchy |
+| ARIA Roles | role=tablist, role=tab, role=tabpanel, role=progressbar, role=log, role=alert |
+| ARIA States | aria-selected, aria-controls, aria-labelledby, aria-describedby, aria-live, aria-atomic |
+| Keyboard Navigation | Arrow keys cycle tabs, Home/End jump to first/last, Enter activates |
+| Focus Management | focus-visible CSS outlines, tabindex managed dynamically |
+| Screen Reader Live Regions | aria-live=polite for results/tracker, aria-live=assertive for status updates |
+| Color Contrast | HSL-based color palette designed for minimum 4.5:1 contrast ratio |
+| Decorative Icons | All emoji icons wrapped with aria-hidden=true |
 
 ---
 
@@ -484,12 +488,12 @@ pytest tests/test_chat.py -v
 
 | Standard | Tool | Status |
 |---|---|---|
-| **PEP 8 Compliance** | `flake8` | ✅ Zero errors |
-| **Import Organization** | `isort` | ✅ Fully sorted |
-| **Type Hints** | Native Python 3.11+ | ✅ All functions typed |
-| **Pydantic Validation** | Pydantic v2 | ✅ All request/response models |
-| **YAGNI Principle** | Manual review | ✅ No unused models or dead code |
-| **SOLID Principles** | Architectural review | ✅ Single responsibility per module |
+| PEP 8 Compliance | flake8 | Zero errors |
+| Import Organization | isort | Fully sorted |
+| Type Hints | Native Python 3.11+ | All functions typed |
+| Pydantic Validation | Pydantic v2 | All request/response models |
+| YAGNI Principle | Manual review | No unused models or dead code |
+| SOLID Principles | Architectural review | Single responsibility per module |
 
 ---
 
@@ -508,17 +512,17 @@ pytest tests/test_chat.py -v
    pip install -r requirements.txt
    ```
 
-3. **Configure API keys** (Optional — the app works without them via local knowledge base):
-   Open `app/config.py` and update placeholder values:
-   - `gemini_api_key` — Google Gemini API key
-   - `claude_api_key` — Anthropic Claude API key
-   - `chatgpt_api_key` — OpenAI ChatGPT API key
-   - `perplexity_api_key` — Perplexity API key
-   - `deepseek_api_key` — DeepSeek API key
-   - `google_client_id` — Google OAuth2 Client ID
-   - `google_client_secret` — Google OAuth2 Client Secret
-   - `gcs_bucket_name` — Google Cloud Storage bucket name
-   - `ga_measurement_id` — Google Analytics 4 Measurement ID
+3. **Configure API keys** (Optional - the app works without them via local knowledge base):
+   Open app/config.py and update placeholder values:
+   - gemini_api_key - Google Gemini API key
+   - claude_api_key - Anthropic Claude API key
+   - chatgpt_api_key - OpenAI ChatGPT API key
+   - perplexity_api_key - Perplexity API key
+   - deepseek_api_key - DeepSeek API key
+   - google_client_id - Google OAuth2 Client ID
+   - google_client_secret - Google OAuth2 Client Secret
+   - gcs_bucket_name - Google Cloud Storage bucket name
+   - ga_measurement_id - Google Analytics 4 Measurement ID
 
 4. **Launch the server**:
    ```bash
@@ -526,7 +530,7 @@ pytest tests/test_chat.py -v
    ```
 
 5. **Open in browser**:
-   Navigate to [http://localhost:8000](http://localhost:8000)
+   Navigate to http://localhost:8000
 
 ---
 
@@ -566,173 +570,36 @@ docker run -p 8000:8000 carbon-platform
 
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/health` | Health check |
-| GET | `/api/csrf-token` | Generate CSRF token |
-| GET | `/api/analytics/config` | Get GA4 configuration |
+| GET | /api/health | Health check |
+| GET | /api/csrf-token | Generate CSRF token |
+| GET | /api/analytics/config | Get GA4 configuration |
 
 ### Authentication
 
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/auth/google/login` | Initiate Google OAuth2 flow |
-| GET | `/api/auth/google/callback` | OAuth2 redirect callback |
-| GET | `/api/auth/user` | Get authenticated profile |
-| POST | `/api/auth/logout` | Log out and clear session |
+| GET | /api/auth/google/login | Initiate Google OAuth2 flow |
+| GET | /api/auth/google/callback | OAuth2 redirect callback |
+| GET | /api/auth/user | Get authenticated profile |
+| POST | /api/auth/logout | Log out and clear session |
 
 ### Carbon Tracking
 
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/api/carbon/calculate` | Calculate CO₂ emissions |
-| POST | `/api/carbon/track` | Save entry + upload to GCS |
-| GET | `/api/carbon/history` | Get session tracking history |
+| POST | /api/carbon/calculate | Calculate CO2 emissions |
+| POST | /api/carbon/track | Save entry + upload to GCS |
+| GET | /api/carbon/history | Get session tracking history |
 
-### AI & Insights
+### AI and Insights
 
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/api/chat` | Send message to AI assistant |
-| POST | `/api/insights` | Get personalized recommendations |
-
----
-
-## Verification Plan
-
-### Automated Tests
-```bash
-# Run full test suite (17 tests)
-pytest -v
-
-# Expected output: 17 passed
-```
-
-| Test Category | What It Verifies |
-|---|---|
-| Carbon calculation tests | EPA/DEFRA emission factor accuracy, edge cases (zero, negative values) |
-| Chat fallback tests | Gemini success, cascade to Claude/ChatGPT, all-fail local KB response |
-| Insights tests | Category identification, tip generation, empty data handling |
-| Security tests | XSS payload stripping, CSRF token enforcement, rate limit headers, body size rejection |
-
-### Manual Verification
-
-| Step | Action | Expected Result |
-|---|---|---|
-| 1 | Launch server (`uvicorn app.main:app --reload`) | Server starts on `http://localhost:8000` |
-| 2 | Open browser to `http://localhost:8000` | Premium dark-themed Calculator page loads |
-| 3 | Fill in all 4 categories and click "Calculate Footprint" | CO₂ total, rating badge, and breakdown bars appear |
-| 4 | Click "Save & Track" | Toast notification confirms entry saved |
-| 5 | Switch to "Tracker" tab | Saved entry appears with CO₂ and rating |
-| 6 | Switch to "Insights" tab (after calculating) | Personalized tips appear based on highest-impact category |
-| 7 | Switch to "AI Chat" tab and ask a question | Chatbot responds via local knowledge base (or LLM if keys configured) |
-| 8 | Toggle "Sign in with Google" (simulation mode) | Mock "Jane Doe" profile appears in navigation |
-| 9 | Check browser console for `[ANALYTICS SIMULATOR]` logs | GA4 events logged on tab switches and calculations |
-| 10 | Run `flake8 app/ tests/` | Zero errors |
-
-### Google Services Verification
-
-| Service | Simulation Mode | Production Mode |
-|---|---|---|
-| **Auth** | Auto-creates mock "Jane Doe" profile | Redirects to Google consent screen |
-| **GCS** | Logs upload details to console | Uploads JSON to configured bucket |
-| **GA4** | Logs events to browser console | Sends events via gtag.js + Measurement Protocol |
-
----
-
-## Technical Feasibility
-
-### Dependencies & Compatibility
-
-| Package | Version | Purpose |
-|---|---|---|
-| `fastapi` | 0.115.12 | ASGI web framework |
-| `uvicorn[standard]` | 0.34.3 | ASGI server |
-| `pydantic` | 2.11.3 | Data validation |
-| `pydantic-settings` | 2.9.1 | Configuration management |
-| `httpx` | 0.28.1 | Async HTTP client for AI APIs |
-| `python-multipart` | 0.0.20 | Form data parsing |
-| `bleach` | 6.2.0 | HTML sanitization |
-| `google-auth` | 2.38.0 | Google Identity verification |
-| `google-cloud-storage` | 2.19.0 | GCS file operations |
-| `pytest` | 8.3.5 | Test framework |
-| `pytest-asyncio` | 0.25.3 | Async test support |
-| `flake8` | 7.2.0 | Linter |
-| `isort` | 6.0.1 | Import sorter |
-| `black` | 25.1.0 | Code formatter |
-
-### Deployment Options
-
-| Method | Command |
-|---|---|
-| **Local (Development)** | `uvicorn app.main:app --reload` |
-| **Local (Production)** | `uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4` |
-| **Docker** | `docker build -t carbon-platform . && docker run -p 8000:8000 carbon-platform` |
-
-### Scalability Considerations
-
-- **Horizontal scaling**: Stateless design allows multiple instances behind a load balancer
-- **Rate limiter**: Currently in-memory (single instance) — swap to Redis for multi-instance deployments
-- **Session storage**: Currently in-memory — swap to Redis or database for persistence
-- **GCS uploads**: Already async-compatible — can handle concurrent uploads without blocking
+| POST | /api/chat | Send message to AI assistant |
+| POST | /api/insights | Get personalized recommendations |
 
 ---
 
 ## License
 
-© 2026 CarbonTrack — Built for a sustainable future.
-#   I m p l e m e n t a t i o n   P l a n :   D a s h b o a r d   &   C a l c u l a t o r   S l i d e r   H e u r i s t i c s  
-  
- T o   e n h a n c e   t h e   C a r b o n   F o o t p r i n t   A w a r e n e s s   P l a t f o r m ,   w e   w i l l   i m p l e m e n t   a n   i n t e r a c t i v e   * * D a s h b o a r d * *   t a b   t o   d i s p l a y   a g g r e g a t e   s t a t i s t i c s   a n d   h i s t o r i c a l   c h a r t s ,   a n d   a n   i n t e r a c t i v e   * * D i s t a n c e   &   F u e l   E m i s s i o n   S l i d e r * *   i n   t h e   C a l c u l a t o r   t o   p r o v i d e   i n s t a n t   f e e d b a c k   o n   f u e l   c o n s u m p t i o n   a n d   c a r b o n   o u t p u t .  
-  
- # #   P r o p o s e d   C h a n g e s  
-  
- # # #   1 .   I n t e r a c t i v e   S l i d e r   i n   C a l c u l a t o r  
- -   * * U I   ( ` i n d e x . h t m l ` ) * * :  
-     -   A d d   a   ` < r a n g e > `   i n p u t   ( s l i d e r )   f o r   T r a n s p o r t   D i s t a n c e   ( 0 . 1   t o   5 0 0   k m ,   s t e p   1 )   a l o n g s i d e   t h e   e x i s t i n g   n u m b e r   i n p u t .  
-     -   B i n d   t h e m   t o g e t h e r   s o   c h a n g i n g   t h e   s l i d e r   u p d a t e s   t h e   n u m b e r   i n p u t ,   a n d   v i c e   v e r s a .  
-     -   A d d   a   l i v e   s i m u l a t i o n   p a n e l   b e l o w   t h e   T r a n s p o r t   f i e l d s   d i s p l a y i n g :  
-         -   * * E s t i m a t e d   F u e l   B u r n e d * *   ( e . g . ,   i n   l i t e r s   o r   k W h   d e p e n d i n g   o n   m o d e )  
-         -   * * E s t i m a t e d   C a r b o n   E m i s s i o n s * *   ( i n   k g   C O �   )  
- -   * * F r o n t e n d   L o g i c   ( ` a p p . j s ` ) * * :  
-     -   I m p l e m e n t   r e a l - t i m e   c a l c u l a t i o n s   u s i n g   f u e l - e f f i c i e n c y   f a c t o r s :  
-         -   * * P e t r o l   C a r * * :   ~ 8   L i t e r s   p e r   1 0 0   k m   ( 0 . 0 8   L / k m ) ,   e m i t t i n g   2 . 3 1   k g   C O �     p e r   L i t e r .  
-         -   * * D i e s e l   C a r * * :   ~ 6   L i t e r s   p e r   1 0 0   k m   ( 0 . 0 6   L / k m ) ,   e m i t t i n g   2 . 6 8   k g   C O �     p e r   L i t e r .  
-         -   * * E l e c t r i c   C a r * * :   ~ 1 5   k W h   p e r   1 0 0   k m   ( 0 . 1 5   k W h / k m ) ,   e m i t t i n g   g r i d   e q u i v a l e n t   e m i s s i o n s .  
-         -   * * B u s / T r a i n / F l i g h t / O t h e r * * :   S p e c i f i c   c a l c u l a t i o n s   b a s e d   o n   d i s t a n c e .  
-     -   D y n a m i c a l l y   u p d a t e   r e a d o u t s   o n   i n p u t   e v e n t s   w i t h o u t   r e q u i r i n g   a   f u l l   f o r m   s u b m i s s i o n .  
-  
- # # #   2 .   A n a l y t i c s   &   V i s u a l   D a s h b o a r d   T a b  
- -   * * U I   ( ` i n d e x . h t m l ` ) * * :  
-     -   A d d   a   n e w   * * D a s h b o a r d * *   t a b   ( ` t a b - d a s h b o a r d ` )   i n   t h e   m a i n   n a v i g a t i o n .  
-     -   A d d   ` p a n e l - d a s h b o a r d `   c o n t a i n e r   w i t h :  
-         -   * * K P I   C a r d s * * :   T o t a l   C O �     s a v e d / t r a c k e d ,   a v e r a g e   d a i l y   e m i s s i o n ,   a n d   c u r r e n t   r a t i n g   b a d g e .  
-         -   * * V i s u a l   A n a l y t i c s   C h a r t s * *   ( d e s i g n e d   w i t h   p u r e   C S S   f o r   p r e m i u m   p e r f o r m a n c e / a 1 1 y ) :  
-             -   * C a t e g o r y   B r e a k d o w n   C h a r t * :   P r o g r e s s   b a r s   s h o w i n g   c u m u l a t i v e   e m i s s i o n s   p e r   c a t e g o r y   ( T r a n s p o r t ,   E n e r g y ,   F o o d ,   W a s t e ) .  
-             -   * H i s t o r i c a l   T r e n d   G r a p h * :   A   b e a u t i f u l   c o l u m n   c h a r t   s h o w i n g   t h e   d a i l y   c a r b o n   f o o t p r i n t   t r e n d   o f   t h e   l a s t   1 0   t r a c k e d   e n t r i e s .  
- -   * * F r o n t e n d   L o g i c   ( ` a p p . j s ` ) * * :  
-     -   E x t e n d   h i s t o r y   t r a c k i n g   t o   c o m p u t e   a g g r e g a t e   m e t r i c s .  
-     -   U p d a t e   D a s h b o a r d   c o m p o n e n t s   d y n a m i c a l l y   w h e n e v e r   a n   e n t r y   i s   s a v e d   o r   h i s t o r y   i s   l o a d e d .  
-     -   S y n c   w i t h   G A 4   c l i e n t - s i d e   e v e n t   t r a c k i n g   f o r   d a s h b o a r d   t a b   v i e w s .  
-  
- # # #   3 .   S t y l i n g   E n h a n c e m e n t s  
- -   * * C S S   ( ` s t y l e . c s s ` ) * * :  
-     -   D e s i g n   p r e m i u m   U I   w i d g e t s   f o r   t h e   s l i d e r   a n d   s i m u l a t i o n   r e a d o u t   b o x .  
-     -   I m p l e m e n t   g l a s s m o r p h i s m   s t y l e d   b a r   c h a r t s ,   t r e n d   c h a r t s ,   a n d   r a t i n g   g a u g e s .  
-     -   E n s u r e   c o m p a t i b i l i t y   w i t h   W C A G   2 . 1   A A   ( c o n t r a s t   r a t i o s ,   f o c u s   i n d i c a t o r s ,   r e s p o n s i v e   l a y o u t ) .  
-  
- - - -  
-  
- # #   T e c h n i c a l   F e a s i b i l i t y  
-  
- -   F u l l y   c l i e n t - s i d e   r e n d e r i n g   u t i l i z i n g   v a n i l l a   J S   a n d   C S S   g r i d / f l e x   l a y o u t .  
- -   N o   e x t e r n a l   l i b r a r i e s   o r   d a t a b a s e   u p d a t e s   r e q u i r e d ,   m a i n t a i n i n g   t h e   l i g h t w e i g h t   s i n g l e - d e p l o y a b l e   a s s e t   a r c h i t e c t u r e .  
-  
- - - -  
-  
- # #   V e r i f i c a t i o n   P l a n  
-  
- # # #   M a n u a l   V e r i f i c a t i o n  
- 1 .   O p e n   t h e   u p d a t e d   a p p l i c a t i o n   o n   ` h t t p : / / l o c a l h o s t : 8 0 0 0 ` .  
- 2 .   M o v e   t h e   D i s t a n c e   s l i d e r   i n   t h e   C a l c u l a t o r   a n d   v e r i f y   t h a t   e s t i m a t e d   f u e l / e l e c t r i c i t y   a n d   c a r b o n   e m i s s i o n s   u p d a t e   i n s t a n t l y .  
- 3 .   S e l e c t   d i f f e r e n t   v e h i c l e s   ( P e t r o l ,   D i e s e l ,   E l e c t r i c )   a n d   v e r i f y   t h a t   t h e   f u e l   t y p e ,   b u r n e d   u n i t s   ( L i t e r s   v s .   k W h ) ,   a n d   e m i s s i o n   s c a l e   a d j u s t   a c c o r d i n g l y .  
- 4 .   A d d   c a l c u l a t i o n s   t o   t h e   T r a c k e r ,   s w i t c h   t o   t h e   D a s h b o a r d   t a b ,   a n d   v e r i f y   t h a t   t h e   K P I   m e t r i c s ,   C a t e g o r y   B r e a k d o w n ,   a n d   H i s t o r i c a l   T r e n d   g r a p h s   u p d a t e   i m m e d i a t e l y .  
- 
+Copyright 2026 CarbonTrack - Built for a sustainable future.
